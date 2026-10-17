@@ -6,11 +6,24 @@ const products = [
   { id: "NK-01", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "23.1 grams", image: "assets/twist-necklace-23-1g.png", alt: "18 Karat twist gold necklace; scale reads 23.1 grams" },
   { id: "NK-02", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "22.9 grams", image: "assets/twist-necklace-22-9g.png", alt: "Separate 18 Karat twist gold necklace; scale reads 22.9 grams" },
   { id: "NK-FR-01", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "2.3 grams", image: "assets/franco-necklace-2-3g.png", alt: "18 Karat Franco gold necklace without a pendant; scale reads 2.3 grams" },
-  { id: "NK-FR-02", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "5.0 grams", image: "assets/franco-necklace-5g.png", alt: "Separate 18 Karat Franco gold necklace without a pendant; scale reads 5 grams" }
+  { id: "NK-FR-02", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "5.0 grams", image: "assets/franco-necklace-5g.png", alt: "Separate 18 Karat Franco gold necklace without a pendant; scale reads 5 grams" },
+  { id: "PD-AN-01", category: "pendants", name: "18 Karat Anchor Pendant", karat: 18, detail: "Anchor design", weight: "8.5 grams", image: "assets/pendant-anchor-8-5g.png", alt: "18 Karat gold anchor pendant on a scale showing 8.5 grams" },
+  { id: "PD-BT-01", category: "pendants", name: "18 Karat Bitcoin Pendant", karat: 18, detail: "Bitcoin design", weight: "7.2 grams", image: "assets/pendant-bitcoin-7-2g.png", alt: "18 Karat gold Bitcoin pendant on a scale showing 7.2 grams" },
+  { id: "PD-JP-01", category: "pendants", name: "18 Karat Jesus Piece Pendant", karat: 18, detail: "Jesus piece design", weight: "2.1 grams", image: "assets/pendant-jesus-piece-2-1g.png", alt: "18 Karat gold Jesus Piece pendant on a scale showing 2.1 grams" },
+  { id: "PD-PH-01", category: "pendants", name: "18 Karat Pharaoh Pendant", karat: 18, detail: "Pharaoh design", weight: "9.3 grams", image: "assets/pendant-pharaoh-9-3g.png", alt: "18 Karat gold Pharaoh pendant on a scale showing 9.3 grams" }
 ];
 
 // Set this to the business WhatsApp number in international digits only, without + or spaces.
 const BUSINESS_WHATSAPP = "2349026859689";
+const newsletterForm = document.querySelector("#footer-newsletter-form");
+if (newsletterForm) {
+  newsletterForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const status = document.querySelector("#footer-newsletter-status");
+    if (status) status.textContent = "Email signup is not connected yet. Please check back soon.";
+  });
+}
+
 const whatsAppIcon = '<svg class="icon whatsapp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.669-1.612-.916-2.207-.241-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.832 9.832 0 0 1-1.51-5.26c.002-5.45 4.437-9.884 9.888-9.884 2.635 0 5.1 1.026 6.96 2.888a9.825 9.825 0 0 1 2.885 6.994c-.002 5.45-4.437 9.884-9.89 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.158 11.892c0 2.096.547 4.142 1.588 5.946L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.49-8.413Z"/></svg>';
 
 const grid = document.querySelector("#product-grid");
@@ -52,6 +65,7 @@ function renderProducts() {
   document.querySelector('[data-filter="all"] span').textContent = products.length;
   document.querySelector('[data-filter="earrings"] span').textContent = products.filter((item) => item.category === "earrings").length;
   document.querySelector('[data-filter="necklaces"] span').textContent = products.filter((item) => item.category === "necklaces").length;
+  document.querySelector('[data-filter="pendants"] span').textContent = products.filter((item) => item.category === "pendants").length;
   grid.querySelectorAll("[data-product]").forEach((button) => button.addEventListener("click", () => openInquiry(button.dataset.product)));
   observeRevealElements(grid);
 }
@@ -282,17 +296,6 @@ observeRevealElements();
 window.addEventListener("scroll", updateScrollMotion, { passive: true });
 updateScrollMotion();
 
-if ("IntersectionObserver" in window) {
-  const footerContactObserver = new IntersectionObserver((entries) => {
-    const footerVisible = entries.some((entry) => entry.isIntersecting);
-    const floatingContact = document.querySelector(".floating-contact");
-    floatingContact.classList.toggle("is-hidden-near-footer", footerVisible);
-    floatingContact.setAttribute("aria-hidden", String(footerVisible));
-    floatingContact.tabIndex = footerVisible ? -1 : 0;
-  });
-  footerContactObserver.observe(document.querySelector(".site-footer"));
-}
-
 // Let the primary-button highlight follow a mouse or trackpad pointer.
 const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -320,7 +323,10 @@ function showTestimonial(index) {
   currentTestimonial = (index + testimonialCards.length) % testimonialCards.length;
   testimonialCards.forEach((card, i) => {
     const isActive = i === currentTestimonial;
+    const offset = (i - currentTestimonial + testimonialCards.length) % testimonialCards.length;
     card.classList.toggle("is-active", isActive);
+    card.classList.toggle("is-next", offset === 1);
+    card.classList.toggle("is-prev", offset === testimonialCards.length - 1);
     card.setAttribute("aria-hidden", String(!isActive));
   });
   if (testimonialDotsContainer) {
@@ -347,6 +353,21 @@ if (testimonialCards.length > 0) {
   if (nextTestimonialBtn) {
     nextTestimonialBtn.addEventListener("click", () => showTestimonial(currentTestimonial + 1));
   }
+
+  // Swipe the deck on touch screens; keep mouse drag and browser scrolling intact.
+  const testimonialDeck = document.querySelector(".testimonials-carousel");
+  if (testimonialDeck) {
+    let touchStartX = 0;
+    testimonialDeck.addEventListener("touchstart", (event) => {
+      touchStartX = event.changedTouches[0]?.clientX ?? 0;
+    }, { passive: true });
+    testimonialDeck.addEventListener("touchend", (event) => {
+      const deltaX = (event.changedTouches[0]?.clientX ?? touchStartX) - touchStartX;
+      if (Math.abs(deltaX) < 48) return;
+      showTestimonial(currentTestimonial + (deltaX < 0 ? 1 : -1));
+    }, { passive: true });
+  }
+  showTestimonial(currentTestimonial);
 }
 
 // GSAP ScrollTrigger Animations
@@ -420,4 +441,3 @@ if (document.readyState === "loading") {
 } else {
   window.addEventListener("load", () => tryInitGSAP());
 }
-
