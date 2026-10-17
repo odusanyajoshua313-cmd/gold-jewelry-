@@ -14,18 +14,28 @@
   <body>
     <div class="scroll-progress" aria-hidden="true"><span></span></div>
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="announcement">Gold jewelry &amp; gold bars · Delivery nationwide</div>
-    <header class="site-header">
-      <a class="wordmark" href="#top" aria-label="Goldplugdami home">goldplug<span>dami</span><i aria-hidden="true">✳</i></a>
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span class="menu-label">Menu</span><svg class="icon menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <nav id="site-nav" class="site-nav" aria-label="Main navigation">
-        <a href="#collection">Collection</a>
-        <a href="#rates">Rates</a>
-        <a href="#testimonials">Testimonials</a>
-        <a href="#faq">FAQ</a>
-        <a href="#about">About</a>
-        <button class="button button-small button-primary js-whatsapp" data-intent="general" type="button">Message us</button>
-      </nav>
+    <header class="site-header" id="navbar">
+      <div class="site-header-inner">
+        <a class="wordmark" href="#top" aria-label="Goldplugdami home">goldplug<span>dami</span><i aria-hidden="true">✳</i></a>
+
+        <nav id="site-nav" class="site-nav" aria-label="Main navigation">
+          <a href="#collection">Collection</a>
+          <a href="#rates">Rates</a>
+          <a href="#testimonials">Testimonials</a>
+          <a href="#faq">FAQ</a>
+          <a href="#about">About</a>
+        </nav>
+
+        <div class="header-actions">
+          <button class="button button-small button-green js-whatsapp" data-intent="general" type="button" aria-label="Message Goldplugdami on WhatsApp">
+            <span>Inquire</span>
+          </button>
+          <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
+            <span class="menu-label sr-only">Menu</span>
+            <svg class="icon menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+        </div>
+      </div>
     </header>
 
     <main id="main">
@@ -171,54 +181,120 @@
       </section>
     </main>
 
-    <footer class="site-footer">
-      <section id="contact" class="footer-cta" data-reveal aria-labelledby="contact-heading">
-        <div class="footer-cta-copy">
-          <p class="eyebrow">READY TO ORDER?</p>
-          <h2 id="contact-heading">Ask for today’s price <em>&amp; availability.</em></h2>
-          <p>Message us directly on WhatsApp with the piece or Karat you want. We confirm today’s live rate and arrange delivery across Nigeria.</p>
-        </div>
-        <div class="footer-cta-orbit" aria-hidden="true"></div>
-        <button class="footer-contact js-whatsapp" type="button" data-intent="general" aria-label="Message Goldplugdami on WhatsApp">
-          <span>Chat on WhatsApp</span>
-        </button>
-      </section>
-      <div class="footer-main">
-        <div class="footer-brand">
-          <a class="wordmark wordmark-footer" href="#top" aria-label="Goldplugdami home">goldplug<span>dami</span><i aria-hidden="true">✳</i></a>
-          <p>Gold jewelry and gold bars from Lagos, Nigeria.</p>
-        </div>
-        <nav class="footer-group" aria-label="Goldplugdami information">
-          <h2>Navigation</h2>
-          <a href="#collection">Collection</a>
-          <a href="#rates">Today’s rates</a>
-          <a href="#why-us">Why choose us</a>
-          <a href="#testimonials">Testimonials</a>
-          <a href="#faq">Frequently asked questions</a>
-          <a href="#about">About us</a>
-        </nav>
-        <div class="footer-group footer-socials">
-          <h2>Follow us</h2>
-          <div class="footer-social-icons" role="group" aria-label="Goldplugdami social profiles">
-            <a class="footer-social-icon" href="https://www.instagram.com/__goldplugdami/" target="_blank" rel="noopener noreferrer" aria-label="Goldplugdami on Instagram" title="Instagram">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle class="social-icon-dot" cx="17.5" cy="6.5" r=".8"/></svg>
-            </a>
-            <a class="footer-social-icon" href="https://www.tiktok.com/@Goldplugdami" target="_blank" rel="noopener noreferrer" aria-label="Goldplugdami on TikTok" title="TikTok">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 3c.3 2.3 1.6 3.7 4.3 3.9v3.4c-1.6.1-3-.4-4.3-1.2v6.6c0 4-4.4 6.5-8 4.5-3.4-1.9-3-7.1.7-8.5 1-.4 2-.5 3-.2V13c-2.1-.7-4.1.9-3.5 3 .5 1.9 3.3 2.4 4.4.8.3-.5.4-1 .4-1.6V3h3Z"/></svg>
+    <footer class="site-footer" id="contact">
+      <!-- Novael-2 Ambient Radial Backlight Glow -->
+      <div class="footer-glow" aria-hidden="true"></div>
+
+      <div class="footer-container">
+        <!-- Novael-2 Combined Contact & Inquire Hero Card -->
+        <section class="footer-cta" data-reveal aria-labelledby="contact-heading">
+          <div class="footer-cta-lightray" aria-hidden="true"></div>
+          
+          <div class="footer-cta-head">
+            <div class="footer-status-badge">
+              <span class="status-pulse-dot" aria-hidden="true"></span>
+              <span>Direct WhatsApp Desk · Lagos, Nigeria</span>
+            </div>
+            <span class="footer-cta-karat-pill">18k · 21k · 22k · 24k</span>
+          </div>
+
+          <div class="footer-cta-content">
+            <div class="footer-cta-copy">
+              <p class="eyebrow"><span class="eyebrow-mark"></span> READY TO ORDER OR INQUIRE?</p>
+              <h2 id="contact-heading">Ask for today’s price <em>&amp; availability.</em></h2>
+              <p>Message us directly on WhatsApp with the piece or Karat you want. We confirm today’s live rate by gram weight, provide scale video proof, and arrange insured delivery across Nigeria.</p>
+              
+              <!-- Value pillars / Trust badges -->
+              <div class="footer-trust-chips">
+                <span class="trust-chip"><svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> Live Gram Rate</span>
+                <span class="trust-chip"><svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Hallmarked &amp; Weighed</span>
+                <span class="trust-chip"><svg class="chip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Nationwide Transit</span>
+              </div>
+            </div>
+
+            <!-- Action panel: Primary WhatsApp button + Quick Call/Chat direct box -->
+            <div class="footer-cta-action">
+              <div class="cta-action-card">
+                <span class="cta-action-label">Instant Response Line</span>
+                <button class="footer-contact js-whatsapp" type="button" data-intent="general" aria-label="Message Goldplugdami on WhatsApp">
+                  <span>Chat on WhatsApp</span>
+                  <svg class="action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                </button>
+                <div class="cta-direct-info">
+                  <a class="cta-phone-link" href="https://wa.me/2349026859689" target="_blank" rel="noopener noreferrer">
+                    <span>Direct: +234 902 685 9689</span>
+                  </a>
+                  <span class="cta-timing">Usually replies within minutes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Novael-2 Structured Architectural Footer Grid -->
+        <div class="footer-main">
+          <!-- Col 1: Brand & Identity -->
+          <div class="footer-brand">
+            <a class="wordmark wordmark-footer" href="#top" aria-label="Goldplugdami home">goldplug<span>dami</span><i aria-hidden="true">✳</i></a>
+            <p>Certified gold jewelry and gold bars in Lagos, Nigeria. Transparent weight-based daily pricing.</p>
+            <div class="footer-store-status">
+              <span class="store-dot"></span>
+              <span>Tejuosho Ultra Modern Market, Yaba</span>
+            </div>
+          </div>
+
+          <!-- Col 2: Navigation -->
+          <nav class="footer-group" aria-label="Store navigation">
+            <h2>Directory</h2>
+            <a href="#collection">Collection</a>
+            <a href="#rates">Today’s Karat rates</a>
+            <a href="#why-us">Why choose us</a>
+            <a href="#testimonials">Customer feedback</a>
+            <a href="#faq">Questions &amp; Answers</a>
+            <a href="#about">About Goldplugdami</a>
+          </nav>
+
+          <!-- Col 3: Karats & Craft -->
+          <div class="footer-group">
+            <h2>Karat Standards</h2>
+            <span class="footer-karat-item">18 Karat <em>· Everyday jewelry</em></span>
+            <span class="footer-karat-item">21 Karat <em>· Traditional pieces</em></span>
+            <span class="footer-karat-item">22 Karat <em>· High purity craft</em></span>
+            <span class="footer-karat-item">24 Karat <em>· Bullion &amp; gold bars</em></span>
+          </div>
+
+          <!-- Col 4: Socials & Connect -->
+          <div class="footer-group footer-socials">
+            <h2>Connect</h2>
+            <div class="footer-social-icons" role="group" aria-label="Social media channels">
+              <a class="footer-social-icon" href="https://www.instagram.com/__goldplugdami/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @__goldplugdami" title="Instagram">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle class="social-icon-dot" cx="17.5" cy="6.5" r=".8"/></svg>
+                <span>Instagram</span>
+              </a>
+              <a class="footer-social-icon" href="https://www.tiktok.com/@Goldplugdami" target="_blank" rel="noopener noreferrer" aria-label="TikTok @Goldplugdami" title="TikTok">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 3c.3 2.3 1.6 3.7 4.3 3.9v3.4c-1.6.1-3-.4-4.3-1.2v6.6c0 4-4.4 6.5-8 4.5-3.4-1.9-3-7.1.7-8.5 1-.4 2-.5 3-.2V13c-2.1-.7-4.1.9-3.5 3 .5 1.9 3.3 2.4 4.4.8.3-.5.4-1 .4-1.6V3h3Z"/></svg>
+                <span>TikTok</span>
+              </a>
+            </div>
+            <a class="footer-social-whatsapp" href="https://wa.me/2349026859689" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Goldplugdami at 0902 685 9689">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.669-1.612-.916-2.207-.241-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.832 9.832 0 0 1-1.51-5.26c.002-5.45 4.437-9.884 9.888-9.884 2.635 0 5.1 1.026 6.96 2.888a9.825 9.825 0 0 1 2.885 6.994c-.002 5.45-4.437 9.884-9.89 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.158 11.892c0 2.096.547 4.142 1.588 5.946L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.49-8.413Z"/></svg>
+              <span>0902 685 9689</span>
             </a>
           </div>
-          <a class="footer-social-whatsapp" href="https://wa.me/2349026859689" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Goldplugdami at 0902 685 9689">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.669-1.612-.916-2.207-.241-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.832 9.832 0 0 1-1.51-5.26c.002-5.45 4.437-9.884 9.888-9.884 2.635 0 5.1 1.026 6.96 2.888a9.825 9.825 0 0 1 2.885 6.994c-.002 5.45-4.437 9.884-9.89 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.158 11.892c0 2.096.547 4.142 1.588 5.946L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.49-8.413Z"/></svg>
-            <span>0902 685 9689</span>
+        </div>
+
+        <!-- Novael-2 Bottom Bar: Legal + Hallmark Guarantee + Back to Top -->
+        <div class="footer-bottom">
+          <div class="footer-bottom-copy">
+            <span>© <span id="year"></span> Goldplugdami. All rights reserved.</span>
+            <span class="footer-sep">·</span>
+            <span>Hallmark number recorded on purchase receipt</span>
+          </div>
+          <a href="#top" class="footer-back-to-top" aria-label="Back to top of page">
+            <span>Back to top</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           </a>
         </div>
-        <div class="footer-group footer-location">
-          <h2>Visit</h2>
-          <p>Tejuosho, Yaba<br />Lagos, Nigeria</p>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© <span id="year"></span> Goldplugdami · Gold jewelry in Lagos, Nigeria</span>
       </div>
     </footer>
 
@@ -227,7 +303,10 @@
       <p class="eyebrow">LET’S TALK GOLD</p><h2 id="dialog-title">Your message is ready.</h2><p id="dialog-product" class="dialog-product"></p><p class="dialog-copy">WhatsApp contact has not been connected yet. Copy this message and send it to Goldplugdami on WhatsApp.</p><textarea id="message-text" readonly aria-label="Pre-filled WhatsApp inquiry"></textarea><button id="copy-message" class="button button-primary" type="button">Copy inquiry</button><p id="copy-status" class="copy-status" role="status"></p>
     </dialog>
     <div class="dialog-backdrop" hidden></div>
-    <button class="floating-contact js-whatsapp" type="button" aria-label="Message Goldplugdami on WhatsApp"><span>Message us</span></button>
+    <button class="floating-contact js-whatsapp" type="button" aria-label="Message Goldplugdami on WhatsApp">
+      <img src="assets/whatsapp-3d.png" alt="" class="whatsapp-3d-icon" width="30" height="30" />
+      <span>Message us</span>
+    </button>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js" defer></script>
     <script src="app.js" defer></script>
