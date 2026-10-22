@@ -1,13 +1,23 @@
 # Goldplugdami local preview
 
-Open the storefront at <http://127.0.0.1:4173/>.
+The storefront now uses a file-backed inventory store and owner-only admin workflow.
 
-The preview server serves only this folder and listens on the local computer. It does not publish the site to the internet. Claude Code and Codex can use the same URL when running on this computer.
+## Start locally
 
-To start the preview again after the server stops:
+Set a private admin token, then start the server:
 
-1. Open a terminal in this folder.
-2. Run the command: node preview-server.cjs
-3. Open <http://127.0.0.1:4173/> in a browser.
+```powershell
+$env:ADMIN_TOKEN = "replace-with-a-long-random-secret"
+node preview-server.cjs
+```
 
-Keep the terminal process running while previewing. Press Ctrl+C to stop it.
+Open the storefront at <http://127.0.0.1:3000/> and the owner inventory tool at <http://127.0.0.1:3000/admin.html>.
+
+## Inventory workflow
+
+- **Add or update stock:** use the inventory tool to add products or adjust stock/status.
+- **Record a sale:** choose WhatsApp, walk-in, or delivery. The recorded quantity is deducted from stock in the same write operation.
+- **Public catalogue:** only active products are returned; stock of zero renders as sold out and disables its inquiry action.
+- **Data file:** `store.json` is the single source of truth. Include it in persistent backups; do not deploy this preview server where its local filesystem can be discarded between requests.
+
+The preview server listens only on the local computer. Use a deployment with persistent storage, HTTPS, protected environment variables, and backups before production use.
