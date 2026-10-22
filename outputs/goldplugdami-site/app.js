@@ -1,17 +1,4 @@
-const products = [
-  { id: "ER-02", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Classic round hoop", weight: "2.5 grams", image: "assets/earrings-hoops-2-5g.jpeg", alt: "Pair of 18 Karat gold hoop earrings; scale reads 2.5 grams" },
-  { id: "ER-05", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Stud earring", weight: "2.1 grams", image: "assets/earrings-stud-2-1g.jpeg", alt: "Pair of 18 Karat gold stud earrings; scale reads 2.1 grams" },
-  { id: "ER-08", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Sculptural form", weight: "1.5 grams", image: "assets/earrings-sculptural-1-5g.jpeg", alt: "18 Karat sculptural gold earring; scale reads 1.5 grams" },
-  { id: "ER-12", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Patterned round hoop", weight: "2.6 grams", image: "assets/earrings-pattern-hoops-2-6g.jpeg", alt: "Pair of 18 Karat patterned gold hoop earrings; scale reads 2.6 grams" },
-  { id: "NK-01", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "23.1 grams", image: "assets/twist-necklace-23-1g.png", alt: "18 Karat twist gold necklace; scale reads 23.1 grams" },
-  { id: "NK-02", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "22.9 grams", image: "assets/twist-necklace-22-9g.png", alt: "Separate 18 Karat twist gold necklace; scale reads 22.9 grams" },
-  { id: "NK-FR-01", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "2.3 grams", image: "assets/franco-necklace-2-3g.png", alt: "18 Karat Franco gold necklace without a pendant; scale reads 2.3 grams" },
-  { id: "NK-FR-02", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "5.0 grams", image: "assets/franco-necklace-5g.png", alt: "Separate 18 Karat Franco gold necklace without a pendant; scale reads 5 grams" },
-  { id: "PD-AN-01", category: "pendants", name: "18 Karat Anchor Pendant", karat: 18, detail: "Anchor design", weight: "8.5 grams", image: "assets/pendant-anchor-8-5g.png", alt: "18 Karat gold anchor pendant on a scale showing 8.5 grams" },
-  { id: "PD-BT-01", category: "pendants", name: "18 Karat Bitcoin Pendant", karat: 18, detail: "Bitcoin design", weight: "7.2 grams", image: "assets/pendant-bitcoin-7-2g.png", alt: "18 Karat gold Bitcoin pendant on a scale showing 7.2 grams" },
-  { id: "PD-JP-01", category: "pendants", name: "18 Karat Jesus Piece Pendant", karat: 18, detail: "Jesus piece design", weight: "2.1 grams", image: "assets/pendant-jesus-piece-2-1g.png", alt: "18 Karat gold Jesus Piece pendant on a scale showing 2.1 grams" },
-  { id: "PD-PH-01", category: "pendants", name: "18 Karat Pharaoh Pendant", karat: 18, detail: "Pharaoh design", weight: "9.3 grams", image: "assets/pendant-pharaoh-9-3g.png", alt: "18 Karat gold Pharaoh pendant on a scale showing 9.3 grams" }
-];
+let products = [];
 
 // Set this to the business WhatsApp number in international digits only, without + or spaces.
 const BUSINESS_WHATSAPP = "2349026859689";
@@ -43,7 +30,7 @@ function renderProducts() {
   grid.innerHTML = pageItems.map((product, index) => `
     <article class="product-card" role="group" aria-roledescription="slide" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
       <div class="product-image"><img src="${product.image}" alt="${product.alt}" loading="lazy" decoding="async" /></div>
-      <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>Price: ask for today’s rate</strong><span>Stock: confirm availability</span></div><button class="product-ask" type="button" data-product="${product.id}">${whatsAppIcon}<span>Check price &amp; stock</span></button></div>
+      <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>${product.quoteState === "daily-rate" ? "Price: today’s rate" : "Price: request a quote"}</strong><span>${product.availability === "in-stock" ? "Stock: available" : "Stock: sold out"}</span></div><button class="product-ask" type="button" data-product="${product.id}" ${product.availability === "in-stock" ? "" : "disabled"}>${whatsAppIcon}<span>${product.availability === "in-stock" ? "Check price &amp; stock" : "Sold out"}</span></button></div>
     </article>`).join("");
   const carouselStatus = document.querySelector("#carousel-status");
   if (carouselStatus) {
@@ -291,7 +278,18 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   });
 });
 document.querySelector("#year").textContent = new Date().getFullYear();
-renderProducts();
+async function loadCatalog() {
+  try {
+    const response = await fetch("/api/catalog", { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Catalog unavailable");
+    const catalog = await response.json();
+    products = catalog.products.map((product) => ({ ...product, id: product.sku, weight: `${product.weightGrams} grams` }));
+    renderProducts();
+  } catch {
+    grid.innerHTML = '<p class="catalog-error" role="alert">The collection is temporarily unavailable. Please contact us on WhatsApp.</p>';
+  }
+}
+loadCatalog();
 observeRevealElements();
 window.addEventListener("scroll", updateScrollMotion, { passive: true });
 updateScrollMotion();
