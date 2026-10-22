@@ -106,6 +106,16 @@ async function handler(request, response) {
     });
     return json(response, 200, { product });
   }
+  if (request.method === "DELETE" && productMatch) {
+    const sku = decodeURIComponent(productMatch[1]);
+    const deleted = await mutate((store) => {
+      const index = store.products.findIndex((item) => item.sku === sku);
+      if (index < 0) throw new Error("Product not found");
+      const [removed] = store.products.splice(index, 1);
+      return removed;
+    });
+    return json(response, 200, { success: true, deletedProduct: deleted });
+  }
   if (request.method === "POST" && url.pathname === "/api/admin/sales") {
     const input = await readBody(request);
     const result = await mutate((store) => {

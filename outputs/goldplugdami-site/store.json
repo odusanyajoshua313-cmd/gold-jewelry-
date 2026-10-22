@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-22T16:28:40.984Z",
+  "updatedAt": "2026-10-22T17:04:27.170Z",
   "products": [
     {
       "sku": "ER-02",
@@ -14,7 +14,7 @@
       "stockQuantity": 1,
       "quoteState": "daily-rate",
       "createdAt": "2026-10-22T00:00:00.000Z",
-      "updatedAt": "2026-10-22T16:28:40.984Z"
+      "updatedAt": "2026-10-22T17:04:27.170Z"
     },
     {
       "sku": "ER-05",
@@ -190,10 +190,10 @@
       "stockQuantity": 1,
       "status": "active",
       "quoteState": "daily-rate",
-      "detail": "",
-      "image": "assets/whatsapp-image-2026-10-15-at-11--1792686391773.jpeg",
-      "alt": "24 Karat gold 24 Karat Gold bar; scale reads 2.5 grams",
-      "updatedAt": "2026-10-22T16:28:11.647Z",
+      "detail": "2.5g Fine Gold 999.9 Bullion with security assay card",
+      "image": "assets/gold-bar-2-5g.jpg",
+      "alt": "24 Karat 2.5 grams 999.9 fine gold bar in tamper-evident security certicard",
+      "updatedAt": "2026-10-22T16:50:00.000Z",
       "createdAt": "2026-10-22T16:28:11.647Z"
     }
   ],

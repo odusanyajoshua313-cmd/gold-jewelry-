@@ -383,6 +383,7 @@
   <header class="topbar">
     <div class="topbar-brand">goldplug<span>dami</span></div>
     <div class="topbar-right">
+      <a href="/" target="_blank" style="color:#d5bb8a; font-size:.75rem; font-weight:600; text-decoration:none; padding:5px 12px; border:1px solid rgba(213,187,138,0.35); border-radius:6px; display:inline-flex; align-items:center; gap:6px;">🌐 View Live Store</a>
       <span class="topbar-tag">Admin Portal</span>
       <button class="topbar-logout" id="logout-btn">Sign out</button>
     </div>
@@ -589,7 +590,7 @@
             <th>Status</th>
             <th>Stock</th>
             <th>Availability</th>
-            <th>Save</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="products-tbody"></tbody>
@@ -672,6 +673,18 @@ async function adminPost(path, body) {
   return res.json();
 }
 
+async function adminDelete(path) {
+  const res = await fetch(path, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + TOKEN }
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    throw new Error(d.error || "Delete failed");
+  }
+  return res.json();
+}
+
 function badge(t, c) {
   return `<span class="badge badge-${c}">${t}</span>`;
 }
@@ -726,7 +739,12 @@ function renderProducts(d) {
         </div>
       </td>
       <td>${avail ? badge("In stock", "green") : badge("Sold out", "red")}</td>
-      <td><button class="btn btn-outline btn-sm save-btn" data-sku="${p.sku}">Save</button></td>
+      <td style="white-space:nowrap">
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-outline btn-sm save-btn" data-sku="${p.sku}">Save</button>
+          <button class="btn btn-sm del-btn" data-sku="${p.sku}" style="background:var(--red-light);color:var(--red);border:1px solid #f5c2c7;padding:6px 10px;" title="Delete product">Delete</button>
+        </div>
+      </td>
     </tr>`;
   }).join("");
 
@@ -755,6 +773,32 @@ function renderProducts(d) {
         toast(e.message, "err");
       } finally {
         btn.textContent = "Save";
+        btn.disabled = false;
+      }
+    });
+  });
+
+  tbody.querySelectorAll(".del-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const sku = btn.dataset.sku;
+      const product = storeData.products.find(p => p.sku === sku);
+      const prodName = product ? product.name : sku;
+      if (!confirm(`Are you sure you want to permanently delete "${prodName}" (${sku})?`)) {
+        return;
+      }
+      btn.textContent = "...";
+      btn.disabled = true;
+      try {
+        await adminDelete(`/api/admin/products/${encodeURIComponent(sku)}`);
+        storeData.products = storeData.products.filter(p => p.sku !== sku);
+        renderProducts(storeData);
+        renderStats(storeData);
+        renderSaleSkus(storeData);
+        if (typeof autoGenerateSKU === "function") autoGenerateSKU(false);
+        toast(`Product ${sku} deleted`, "ok");
+      } catch (e) {
+        toast(e.message, "err");
+        btn.textContent = "Delete";
         btn.disabled = false;
       }
     });

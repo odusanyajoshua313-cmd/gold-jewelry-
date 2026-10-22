@@ -48,7 +48,7 @@
         <div class="content"><h2 class="title">18 Karat Franco Gold Necklace</h2><div class="facts"><span>Franco design · no pendant</span><span class="weight">5.0 grams</span></div><div class="price-block"><strong>Price: ask for today’s rate</strong><span>Availability: confirm with us</span></div><button class="whatsapp" type="button" aria-label="Check price and stock for 18 Karat Franco Gold Necklace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.669-1.612-.916-2.207-.241-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.832 9.832 0 0 1-1.51-5.26c.002-5.45 4.437-9.884 9.888-9.884 2.635 0 5.1 1.026 6.96 2.888a9.825 9.825 0 0 1 2.885 6.994c-.002 5.45-4.437 9.884-9.89 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16.335.158 11.892c0 2.096.547 4.142 1.588 5.946L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.49-8.413Z"/></svg><span>Check price &amp; stock</span></button></div>
       </article>
     </section>
-    <p class="status" id="mock-status" aria-live="polite">Preview only — actions are not connected to WhatsApp.</p>
+    <p class="status" id="mock-status" aria-live="polite">Preview only: actions are not connected to WhatsApp.</p>
     <aside class="mock-notes"><strong>Review points:</strong> full “18 Karat” stays in the product title beside the item name; there is no white Karat badge over the photo; each card uses the same image frame, text gutter, details rhythm, price/status block, and bottom-aligned WhatsApp action. Palette is unchanged.</aside>
   </main>
   <script>
@@ -60,9 +60,21 @@
       cards.forEach((card)=>card.hidden=filter.dataset.category!=="all"&&card.dataset.category!==filter.dataset.category);
       status.textContent=`Mock filter selected: ${filter.textContent.trim()}. WhatsApp actions remain unconnected in this preview.`;
     }));
-    document.querySelectorAll(".whatsapp").forEach((button)=>button.addEventListener("click",()=>{
-      status.textContent="Mock only: the live WhatsApp number has not been configured, so this preview does not open or send a message.";
-    }));
+    document.querySelectorAll(".card").forEach((card) => {
+      const btn = card.querySelector(".whatsapp");
+      const title = card.querySelector(".title")?.textContent || "Gold piece";
+      const weight = card.querySelector(".weight")?.textContent || "";
+      const facts = card.querySelector(".facts span:first-child")?.textContent || "";
+      const img = card.querySelector("img")?.src || "";
+      const text = `Hello Goldplugdami, I’m interested in the ${title} (${weight}, ${facts}). Please confirm today’s calculated price, availability, and delivery options.\n\nProduct photo: ${img}`;
+      btn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.open(`https://wa.me/2349026859689?text=${encodeURIComponent(text)}`, "_blank");
+      });
+      card.addEventListener("click", () => {
+        window.open(`https://wa.me/2349026859689?text=${encodeURIComponent(text)}`, "_blank");
+      });
+    });
   </script>
 </body>
 </html>

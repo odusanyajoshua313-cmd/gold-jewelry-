@@ -35,7 +35,7 @@ function renderProducts() {
   const start = currentPage * PAGE_SIZE;
   const pageItems = visible.slice(start, start + PAGE_SIZE);
   grid.innerHTML = pageItems.map((product, index) => `
-    <article class="product-card" role="group" aria-roledescription="slide" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
+    <article class="product-card" role="button" tabindex="0" data-product="${product.id}" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
       <div class="product-image"><img src="${product.image}" alt="${product.alt}" loading="lazy" decoding="async" /></div>
       <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>${product.quoteState === "daily-rate" ? "Price: today’s rate" : "Price: request a quote"}</strong><span>${product.availability === "in-stock" ? "Stock: available" : "Stock: sold out"}</span></div><button class="product-ask" type="button" data-product="${product.id}" ${product.availability === "in-stock" ? "" : "disabled"}>${whatsAppIcon}<span>${product.availability === "in-stock" ? "Check price &amp; stock" : "Sold out"}</span></button></div>
     </article>`).join("");
@@ -43,7 +43,7 @@ function renderProducts() {
   if (carouselStatus) {
     const categoryName = activeFilter === "all" ? "pieces" : activeFilter.replace(/-/g, " ");
     carouselStatus.textContent = visible.length > 0
-      ? `Showing ${start + 1}–${start + pageItems.length} of ${visible.length} ${categoryName}`
+      ? `Showing ${start + 1} to ${start + pageItems.length} of ${visible.length} ${categoryName}`
       : `No ${categoryName} found`;
   }
   const pages = document.querySelector("#carousel-pages");
@@ -65,7 +65,21 @@ function renderProducts() {
   setFilterCount("earrings", (item) => item.category === "earrings");
   setFilterCount("necklaces", (item) => item.category === "necklaces" || item.category === "chains");
   setFilterCount("pendants", (item) => item.category === "pendants");
-  grid.querySelectorAll("[data-product]").forEach((button) => button.addEventListener("click", () => openInquiry(button.dataset.product)));
+  grid.querySelectorAll(".product-card").forEach((card) => {
+    card.addEventListener("click", () => openInquiry(card.dataset.product));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openInquiry(card.dataset.product);
+      }
+    });
+  });
+  grid.querySelectorAll(".product-ask").forEach((button) => {
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openInquiry(button.dataset.product);
+    });
+  });
   observeRevealElements(grid);
 }
 
@@ -174,26 +188,70 @@ function openInquiry(productId = "", intent = "general") {
     visit: "I’d like to arrange an in-person visit to your Lagos location. Please share the location details and a suitable time.",
     trust: "I have a question about Karat, item weight, hallmark details, or the purchase receipt."
   };
+  const imageUrl = product && product.image ? new URL(product.image, window.location.href).href : "";
   const text = product
-    ? `Hello Goldplugdami, I’m interested in the ${product.name} (${product.weight}; ${product.detail}). Please confirm today’s calculated price, availability, and delivery options. Product reference: ${product.id}.`
+    ? `Hello Goldplugdami, I'm interested in the ${product.name} (${product.karat ? product.karat + " Karat, " : ""}${product.weight}, ${product.detail}). Please confirm today's calculated price, availability, and delivery options.\n\nProduct reference: ${product.id}${imageUrl ? `\nProduct photo: ${imageUrl}` : ""}`
     : `Hello Goldplugdami, ${requests[intent] || requests.general}`;
-  const inquiryLabel = product
-    ? `${product.name} · ${product.weight}`
-    : intent === "visit"
-      ? "Lagos shop visit"
-      : intent === "rates"
-        ? "Today’s Karat rates"
-        : intent === "trust"
-          ? "Karat, weight, and hallmark details"
-          : "Gold jewelry and gold bars";
-  document.querySelector("#dialog-product").textContent = inquiryLabel;
-  messageField.value = text;
-  document.querySelector("#copy-status").textContent = "";
-  if (BUSINESS_WHATSAPP) {
+
+  // Product selected: go straight to WhatsApp, no modal
+  if (product && BUSINESS_WHATSAPP) {
     window.open(`https://wa.me/${BUSINESS_WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
     return;
   }
-  dialog.showModal();
+
+  // General inquiry (no product): show the dialog
+  const labelEl = document.querySelector("#dialog-product");
+  if (labelEl) labelEl.textContent = "Gold inquiry";
+
+  if (messageField) messageField.value = text;
+  const statusEl = document.querySelector("#copy-status");
+  if (statusEl) statusEl.textContent = "";
+
+  const productCard = document.querySelector("#dialog-product-card");
+  if (productCard) productCard.hidden = true;
+
+  const waLink = document.querySelector("#dialog-whatsapp-link");
+  if (waLink && BUSINESS_WHATSAPP) {
+    waLink.href = `https://wa.me/${BUSINESS_WHATSAPP}?text=${encodeURIComponent(text)}`;
+  }
+
+  if (dialog) {
+    dialog.showModal();
+  }
+}
+
+async function copyImageToClipboard(imageSrc) {
+  try {
+    const r = await fetch(imageSrc);
+    const blob = await r.blob();
+    let png = blob;
+    if (blob.type !== "image/png") {
+      const bmp = await createImageBitmap(blob);
+      const c = document.createElement("canvas");
+      c.width = bmp.width;
+      c.height = bmp.height;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(bmp, 0, 0);
+      png = await new Promise((res) => c.toBlob(res, "image/png"));
+    }
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function showToast(msg, dur = 4500) {
+  const box = document.querySelector("#toast-container");
+  if (!box) return;
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.innerHTML = `<svg class="toast-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>${msg}</span>`;
+  box.appendChild(t);
+  setTimeout(() => {
+    t.classList.add("is-hiding");
+    t.addEventListener("animationend", () => t.remove(), { once: true });
+  }, dur);
 }
 
 document.querySelectorAll(".js-whatsapp").forEach((button) => {
@@ -213,10 +271,29 @@ document.querySelectorAll(".filter-chip").forEach((button) => button.addEventLis
   });
   renderProducts();
 }));
+
+document.querySelector("#copy-image-btn")?.addEventListener("click", async () => {
+  const img = document.querySelector("#dialog-product-img");
+  if (!img || !img.src || img.src === window.location.href) {
+    showToast("No product image selected.");
+    return;
+  }
+  const lbl = document.querySelector("#copy-image-btn span");
+  if (lbl) lbl.textContent = "Copying…";
+  const ok = await copyImageToClipboard(img.src);
+  if (lbl) lbl.textContent = "Copy Photo";
+  if (ok) {
+    showToast("Photo copied. In WhatsApp press Ctrl+V to attach it.");
+  } else {
+    document.querySelector("#copy-status").textContent = "Right-click the photo above and choose ‘Copy Image’, then paste into WhatsApp.";
+  }
+});
+
 document.querySelector("#copy-message").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(messageField.value);
-    document.querySelector("#copy-status").textContent = "Inquiry copied. Paste it into your WhatsApp chat with Goldplugdami.";
+    showToast("Inquiry text copied. Paste it into your WhatsApp chat with Goldplugdami.");
+    document.querySelector("#copy-status").textContent = "Message copied!";
   } catch {
     messageField.select();
     document.querySelector("#copy-status").textContent = "Select and copy the message, then paste it into your WhatsApp chat with Goldplugdami.";
@@ -384,7 +461,7 @@ if (testimonialCards.length > 0) {
 function initGSAPAnimations() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
-    // GSAP not loaded — fall back to full opacity so text is always visible
+    // GSAP not loaded: fall back to full opacity so text is always visible
     document.querySelectorAll(".js-scrub-text span").forEach((span) => span.classList.add("is-active"));
     return;
   }
@@ -413,7 +490,7 @@ function initGSAPAnimations() {
     );
   }
 
-  // 2. Trust photo — cinematic scale & fade as it scrolls into view
+  // 2. Trust photo: cinematic scale & fade as it scrolls into view
   const trustPhotoImg = document.querySelector("#why-us .trust-photo img");
   if (trustPhotoImg) {
     gsap.fromTo(
@@ -441,7 +518,7 @@ function tryInitGSAP(retries = 8) {
   } else if (retries > 0) {
     setTimeout(() => tryInitGSAP(retries - 1), 150);
   } else {
-    // Give up — show text fully as fallback
+    // Give up: show text fully as fallback
     document.querySelectorAll(".js-scrub-text span").forEach((span) => span.classList.add("is-active"));
   }
 }
