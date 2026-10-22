@@ -4,7 +4,7 @@ const path = require("node:path");
 
 const root = __dirname;
 const dataPath = path.join(root, "store.json");
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 4173);
 const adminToken = process.env.ADMIN_TOKEN;
 let writeQueue = Promise.resolve();
 const contentTypes = { ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8", ".jpeg": "image/jpeg", ".jpg": "image/jpeg", ".js": "text/javascript; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".webp": "image/webp" };
@@ -17,13 +17,18 @@ function publicProduct(product) {
   return { sku: product.sku, name: product.name, category: product.category, karat: product.karat, weightGrams: product.weightGrams, detail: product.detail, image: product.image, alt: product.alt, quoteState: product.quoteState, availability: product.status === "active" && product.stockQuantity > 0 ? "in-stock" : "sold-out" };
 }
 function authorised(request) { return Boolean(adminToken) && request.headers.authorization === `Bearer ${adminToken}`; }
-async function readBody(request) {
+async function readBody(request, limit = 100000) {
   let body = "";
-  for await (const chunk of request) { body += chunk; if (body.length > 100000) throw new Error("Request body is too large"); }
+  for await (const chunk of request) { body += chunk; if (body.length > limit) throw new Error("Request body is too large"); }
   try { return JSON.parse(body || "{}"); } catch { throw new Error("Body must be valid JSON"); }
 }
 function validateProduct(input, existing = {}) {
   const product = { ...existing, ...input };
+  if (!product.sku || !String(product.sku).trim()) {
+    const cat = String(product.category || "item").toLowerCase();
+    const prefix = cat.includes("bar") ? "GB" : cat.includes("ear") ? "ER" : cat.includes("pen") ? "PN" : cat.includes("neck") || cat.includes("chain") ? "CH" : cat.includes("brac") ? "BR" : cat.includes("ring") ? "RG" : "GP";
+    product.sku = `${prefix}-${Date.now().toString().slice(-4)}`;
+  }
   for (const field of ["sku", "name", "category", "image", "alt"]) if (typeof product[field] !== "string" || !product[field].trim()) throw new Error(`${field} is required`);
   if (!Number.isInteger(Number(product.karat)) || ![18, 21, 22, 24].includes(Number(product.karat))) throw new Error("karat must be 18, 21, 22, or 24");
   if (!Number.isFinite(Number(product.weightGrams)) || Number(product.weightGrams) <= 0) throw new Error("weightGrams must be greater than zero");
@@ -44,7 +49,7 @@ async function mutate(work) {
   return task;
 }
 async function serveStatic(pathname, response) {
-  const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\\/+/, "");
+  const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const filePath = path.resolve(root, relativePath);
   if (filePath !== root && !filePath.startsWith(root + path.sep)) return json(response, 403, { error: "Forbidden" });
   try { const contents = await fs.readFile(filePath); response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream", "X-Content-Type-Options": "nosniff" }).end(contents); }
@@ -59,6 +64,28 @@ async function handler(request, response) {
   if (!url.pathname.startsWith("/api/")) return serveStatic(url.pathname, response);
   if (!url.pathname.startsWith("/api/admin/")) return json(response, 404, { error: "Not found" });
   if (!authorised(request)) return json(response, 401, { error: "Administrator authentication is required" });
+  if (request.method === "POST" && url.pathname === "/api/admin/upload") {
+    const input = await readBody(request, 20 * 1024 * 1024);
+    if (!input.dataBase64) throw new Error("Image data is required");
+    const matches = String(input.dataBase64).match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    let ext = ".jpg";
+    let buffer;
+    if (matches) {
+      const mime = matches[1];
+      if (mime.includes("png")) ext = ".png";
+      else if (mime.includes("webp")) ext = ".webp";
+      else if (mime.includes("jpeg") || mime.includes("jpg")) ext = ".jpeg";
+      buffer = Buffer.from(matches[2], "base64");
+    } else {
+      buffer = Buffer.from(input.dataBase64, "base64");
+    }
+    const rawName = path.parse(String(input.filename || "upload")).name;
+    const cleanName = rawName.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-").slice(0, 32) || "product";
+    const fileName = `${cleanName}-${Date.now()}${ext}`;
+    const targetPath = path.join(root, "assets", fileName);
+    await fs.writeFile(targetPath, buffer);
+    return json(response, 201, { path: `assets/${fileName}`, filename: fileName });
+  }
   if (request.method === "GET" && url.pathname === "/api/admin/store") return json(response, 200, JSON.parse(await fs.readFile(dataPath, "utf8")));
   if (request.method === "POST" && url.pathname === "/api/admin/products") {
     const input = await readBody(request);
@@ -69,7 +96,7 @@ async function handler(request, response) {
     });
     return json(response, 201, { product });
   }
-  const productMatch = url.pathname.match(/^\\/api\\/admin\\/products\\/([^/]+)$/);
+  const productMatch = url.pathname.match(/^\/api\/admin\/products\/([^/]+)$/);
   if (request.method === "PUT" && productMatch) {
     const input = await readBody(request); const sku = decodeURIComponent(productMatch[1]);
     const product = await mutate((store) => {

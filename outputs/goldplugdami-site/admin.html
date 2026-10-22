@@ -1,1 +1,1140 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Goldplugdami inventory</title><style>body{font:16px system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;background:#f5f0e7;color:#173f3d}input,select,textarea,button{font:inherit;padding:.55rem}fieldset{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;border:1px solid #9a8770;margin:1rem 0;padding:1rem}label{display:grid;gap:.3rem;font-size:.85rem}button{background:#175e59;color:#fff;border:0;border-radius:4px;cursor:pointer}.panel{background:#fff;padding:1rem;margin:1rem 0;border-radius:8px}table{width:100%;border-collapse:collapse}td,th{padding:.55rem;text-align:left;border-bottom:1px solid #ddd}.error{color:#9b2c2c}.sold{color:#9b2c2c;font-weight:700}</style></head><body><h1>Goldplugdami inventory</h1><p>Owner-only tool. Set <code>ADMIN_TOKEN</code> on the server, then use that token below. It is kept only for this browser session.</p><section class="panel"><label>Admin token<input id="token" type="password" autocomplete="current-password"></label><button id="load">Load inventory</button><p id="status" role="status"></p></section><section id="workspace" hidden><section class="panel"><h2>Add product</h2><form id="product-form"><fieldset><label>SKU<input name="sku" required></label><label>Name<input name="name" required></label><label>Category<input name="category" required placeholder="necklaces"></label><label>Karat<select name="karat"><option>18</option><option>21</option><option>22</option><option>24</option></select></label><label>Weight (g)<input name="weightGrams" type="number" min=".01" step=".01" required></label><label>Stock quantity<input name="stockQuantity" type="number" min="0" step="1" required></label><label>Quote state<select name="quoteState"><option value="daily-rate">Daily rate</option><option value="request-quote">Request quote</option></select></label><label>Status<select name="status"><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option></select></label><label>Image path<input name="image" required placeholder="assets/example.png"></label><label>Image alt text<input name="alt" required></label><label>Detail<input name="detail"></label></fieldset><button>Add product</button></form></section><section class="panel"><h2>Record sale</h2><form id="sale-form"><fieldset><label>Product<select id="sale-sku" name="sku"></select></label><label>Quantity<input name="quantity" type="number" min="1" value="1" required></label><label>Channel<select name="channel"><option value="whatsapp">WhatsApp</option><option value="walk-in">Walk-in</option><option value="delivery">Delivery</option></select></label><label>Reference<input name="reference" placeholder="Receipt/order no."></label><label>Notes<textarea name="notes"></textarea></label></fieldset><button>Record sale and reduce stock</button></form></section><section class="panel"><h2>Catalogue</h2><table><thead><tr><th>SKU</th><th>Product</th><th>Stock</th><th>Status</th><th>Save</th></tr></thead><tbody id="products"></tbody></table></section><section class="panel"><h2>Recent sales</h2><div id="sales"></div></section></section><script src="admin.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inventory &amp; Products - Goldplugdami Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a1118;
+      --paper: #f5f0e7;
+      --surface: #ffffff;
+      --surface2: #f0ece3;
+      --teal: #145257;
+      --teal-hover: #0f3d41;
+      --gold: #b8860b;
+      --gold-light: #fdf6e3;
+      --red: #9b2335;
+      --red-light: #fdecea;
+      --green: #1a6b3c;
+      --green-light: #e8f5ee;
+      --muted: #6b6070;
+      --line: #e0d8cc;
+      --radius: 10px;
+      --shadow: 0 2px 12px rgba(26,17,24,.08);
+      --shadow-lg: 0 8px 32px rgba(26,17,24,.14);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1118 0%, #145257 100%);
+    }
+    .login-box {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 48px 40px;
+      width: min(420px, calc(100vw - 32px));
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+    .login-wordmark {
+      font-family: "Playfair Display", serif;
+      font-size: 1.6rem;
+      letter-spacing: -.04em;
+      color: var(--teal);
+      margin-bottom: 6px;
+    }
+    .login-wordmark span { color: var(--gold); }
+    .login-box p { color: var(--muted); font-size: .82rem; margin-bottom: 28px; }
+    .login-box label {
+      display: block;
+      text-align: left;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font: inherit;
+      font-size: .85rem;
+      background: var(--paper);
+      color: var(--ink);
+      margin-bottom: 18px;
+      transition: border-color .15s;
+    }
+    .login-box input:focus { outline: none; border-color: var(--teal); }
+    .login-error { color: var(--red); font-size: .75rem; margin-bottom: 12px; min-height: 1em; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 8px;
+      font: 700 .8rem "DM Sans", sans-serif;
+      cursor: pointer;
+      transition: all .16s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+      padding: 11px 20px;
+    }
+    .btn-primary:hover {
+      background: var(--teal-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(20,82,87,.25);
+    }
+    .btn-sm { padding: 6px 12px; font-size: .72rem; border-radius: 6px; }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+    .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+    .btn-success { background: var(--green-light); color: var(--green); border: 1px solid #b8dfc9; }
+    .btn-success:hover { background: var(--green); color: #fff; }
+    #app { display: none; min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(16px, 4vw, 40px);
+      height: 56px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .topbar-brand { font-family: "Playfair Display", serif; font-size: 1.15rem; color: #fff; letter-spacing: -.03em; }
+    .topbar-brand span { color: #d5bb8a; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-tag {
+      background: rgba(255,255,255,.1);
+      color: #d5bb8a;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      padding: 4px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .topbar-logout {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.2);
+      color: rgba(255,255,255,.7);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font: 600 .72rem "DM Sans", sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .topbar-logout:hover { border-color: #fff; color: #fff; }
+    .page-wrap { max-width: 1160px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 60px; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+    .stat-label { font-size: .65rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1; color: var(--ink); }
+    .stat-value.teal { color: var(--teal); }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.red { color: var(--red); }
+    .section-title {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .panel {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .field label {
+      display: block;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font: inherit;
+      font-size: .82rem;
+      background: var(--paper);
+      color: var(--ink);
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: var(--teal);
+    }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr auto; gap: 12px; align-items: end; }
+    .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 10px; }
+
+    /* Upload Dropzone styling */
+    .upload-dropzone {
+      border: 2px dashed var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s ease;
+      position: relative;
+    }
+    .upload-dropzone:hover, .upload-dropzone.dragover {
+      border-color: var(--teal);
+      background: #edf5f5;
+    }
+    .upload-icon {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      background: rgba(20, 82, 87, 0.08);
+      color: var(--teal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .upload-prompt-title {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+    .upload-prompt-sub {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    .upload-preview-card {
+      display: none;
+      background: var(--surface2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      align-items: center;
+      gap: 14px;
+    }
+    .upload-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .upload-info { flex: 1; text-align: left; }
+    .upload-filename { font-weight: 600; font-size: .82rem; color: var(--ink); word-break: break-all; }
+    .upload-meta { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+    .upload-status { font-size: .7rem; font-weight: 700; margin-top: 4px; display: inline-block; }
+
+    .table-wrap {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+      margin-bottom: 32px;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    thead { background: var(--surface2); }
+    thead th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    tbody tr { border-top: 1px solid var(--line); transition: background .12s; }
+    tbody tr:hover { background: #faf7f2; }
+    td { padding: 12px 14px; font-size: .8rem; vertical-align: middle; }
+    .td-img {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: 7px;
+      background: var(--surface2);
+      display: block;
+    }
+    .td-name { font-weight: 600; font-size: .82rem; line-height: 1.3; }
+    .td-sku { font-size: .65rem; color: var(--muted); font-family: monospace; margin-top: 2px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .badge-green { background: var(--green-light); color: var(--green); }
+    .badge-red { background: var(--red-light); color: var(--red); }
+    .badge-grey { background: var(--surface2); color: var(--muted); }
+    .badge-gold { background: var(--gold-light); color: var(--gold); }
+    .stock-cell { display: flex; align-items: center; gap: 6px; }
+    .stock-input {
+      width: 56px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+      font-size: .8rem;
+      text-align: center;
+      background: var(--paper);
+    }
+    .stock-input:focus { outline: none; border-color: var(--teal); }
+    .sale-msg, .add-msg { margin-top: 8px; font-size: .75rem; min-height: 1.2em; font-weight: 600; }
+    .sale-msg.ok, .add-msg.ok { color: var(--green); }
+    .sale-msg.err, .add-msg.err { color: var(--red); }
+    .sales-empty { padding: 28px; text-align: center; color: var(--muted); font-size: .8rem; }
+    .loader { display: flex; align-items: center; justify-content: center; padding: 40px; gap: 10px; color: var(--muted); font-size: .8rem; }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--line);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99;
+      background: var(--ink);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: .8rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .28s cubic-bezier(.2,.8,.2,1);
+      pointer-events: none;
+      max-width: 340px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.toast-ok { background: var(--green); }
+    .toast.toast-err { background: var(--red); }
+    @media (max-width: 860px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+      .form-row { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 540px) {
+      .grid-3, .grid-4, .grid-2, .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-wordmark">goldplug<span>dami</span></div>
+    <p>Admin &amp; Inventory Dashboard</p>
+    <label for="token-input">Admin Token</label>
+    <input id="token-input" type="password" placeholder="Enter your admin token" autocomplete="current-password" />
+    <div class="login-error" id="login-error"></div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%">Sign in</button>
+  </div>
+</div>
+
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-brand">goldplug<span>dami</span></div>
+    <div class="topbar-right">
+      <span class="topbar-tag">Admin Portal</span>
+      <button class="topbar-logout" id="logout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <div class="page-wrap">
+    <!-- Top Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value teal" id="stat-total">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Stock</div>
+        <div class="stat-value" id="stat-instock">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sold Out</div>
+        <div class="stat-value red" id="stat-soldout">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sales Recorded</div>
+        <div class="stat-value gold" id="stat-sales">-</div>
+      </div>
+    </div>
+
+    <!-- Add New Product Panel -->
+    <p class="section-title">Add New Product</p>
+    <div class="panel">
+      <form id="add-product-form" onsubmit="return false;">
+        <div class="grid-3">
+          <div class="field">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label for="prod-sku" style="margin-bottom:0">SKU (Auto-Generated)*</label>
+              <button type="button" id="btn-regen-sku" title="Generate next unique SKU" style="background:none; border:none; color:var(--teal); font-size:.68rem; font-weight:700; cursor:pointer; text-decoration:underline;">↺ New SKU</button>
+            </div>
+            <input id="prod-sku" type="text" placeholder="Auto-generated" required style="font-family:monospace; font-weight:600; letter-spacing:0.04em;" />
+          </div>
+          <div class="field">
+            <label for="prod-name">Product Name*</label>
+            <input id="prod-name" type="text" placeholder="e.g. 18 Karat Cuban Chain" required />
+          </div>
+          <div class="field">
+            <label for="prod-category">Category*</label>
+            <select id="prod-category" required>
+              <option value="gold-bars">Gold Bars</option>
+              <option value="necklaces">Chains / Necklaces</option>
+              <option value="bracelets">Bracelets</option>
+              <option value="pendants">Pendants</option>
+              <option value="earrings">Earrings</option>
+              <option value="rings">Rings</option>
+              <option value="watches">Watches</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-4">
+          <div class="field">
+            <label for="prod-karat">Karat*</label>
+            <select id="prod-karat" required>
+              <option value="18">18 Karat (18K)</option>
+              <option value="21">21 Karat (21K)</option>
+              <option value="22">22 Karat (22K)</option>
+              <option value="24">24 Karat (24K)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="prod-weight">Weight in Grams (g)*</label>
+            <input id="prod-weight" type="number" step="0.1" min="0.1" placeholder="e.g. 8.5" required />
+          </div>
+          <div class="field">
+            <label for="prod-stock">Initial Stock Qty*</label>
+            <input id="prod-stock" type="number" min="0" value="1" required />
+          </div>
+          <div class="field">
+            <label for="prod-status">Status*</label>
+            <select id="prod-status" required>
+              <option value="active">Active (Visible)</option>
+              <option value="draft">Draft (Hidden)</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="prod-quote">Quote State*</label>
+            <select id="prod-quote" required>
+              <option value="daily-rate">Daily Gold Rate</option>
+              <option value="request-quote">Request Custom Quote</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="prod-detail">Detail / Description</label>
+            <input id="prod-detail" type="text" placeholder="e.g. Solid Miami link with lobster clasp" />
+          </div>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div class="field" style="margin-bottom: 14px;">
+          <label>Product Image (Upload Photo)*</label>
+          <input type="file" id="prod-file" accept="image/png, image/jpeg, image/webp" style="display: none;" />
+          <input type="hidden" id="prod-image" required />
+
+          <!-- Interactive Upload Dropzone -->
+          <div class="upload-dropzone" id="upload-dropzone">
+            <div class="upload-icon">📷</div>
+            <div class="upload-prompt-title">Click to upload or drag &amp; drop product photo</div>
+            <div class="upload-prompt-sub">Supports PNG, JPG, or WEBP up to 20MB &bull; Saved directly to catalog</div>
+          </div>
+
+          <!-- Preview Card after selection/upload -->
+          <div class="upload-preview-card" id="upload-preview-card">
+            <img class="upload-thumb" id="upload-thumb" src="" alt="Selected photo" />
+            <div class="upload-info">
+              <div class="upload-filename" id="upload-filename">photo.jpg</div>
+              <div class="upload-meta" id="upload-meta">0 KB</div>
+              <div class="upload-status" id="upload-status">Ready</div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="change-img-btn">Change Photo</button>
+          </div>
+
+          <!-- Manual URL / Asset fallback -->
+          <div style="margin-top: 8px;">
+            <a href="#" id="toggle-manual-image" style="font-size: .72rem; color: var(--muted); text-decoration: underline;">Or enter image path / existing asset manually</a>
+          </div>
+
+          <div id="manual-image-wrap" style="display: none; margin-top: 10px;">
+            <input id="prod-image-manual" type="text" list="image-suggestions" placeholder="assets/... or https://..." />
+            <datalist id="image-suggestions">
+              <option value="assets/franco-necklace-2-3g.png">
+              <option value="assets/franco-necklace-5g.png">
+              <option value="assets/twist-necklace-22-9g.png">
+              <option value="assets/twist-necklace-23-1g.png">
+              <option value="assets/pendant-jesus-piece-2-1g.png">
+              <option value="assets/pendant-anchor-8-5g.png">
+              <option value="assets/pendant-bitcoin-7-2g.png">
+              <option value="assets/pendant-pharaoh-9-3g.png">
+              <option value="assets/earrings-hoops-2-5g.jpeg">
+              <option value="assets/earrings-pattern-hoops-2-6g.jpeg">
+              <option value="assets/earrings-sculptural-1-5g.jpeg">
+              <option value="assets/earrings-stud-2-1g.jpeg">
+            </datalist>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 14px;">
+          <label for="prod-alt">Image Alt Description*</label>
+          <input id="prod-alt" type="text" placeholder="e.g. 18 Karat gold chain on scale weighing 8.5 grams" required />
+        </div>
+
+        <div class="form-footer">
+          <div class="add-msg" id="add-msg"></div>
+          <button class="btn btn-primary" id="add-product-btn">
+            + Add Product to Catalog
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Record a Sale Panel -->
+    <p class="section-title">Record a Sale</p>
+    <div class="panel">
+      <div class="form-row">
+        <div class="field">
+          <label for="sale-sku">Product</label>
+          <select id="sale-sku"><option value="">Loading...</option></select>
+        </div>
+        <div class="field">
+          <label for="sale-qty">Qty</label>
+          <input id="sale-qty" type="number" value="1" min="1" max="99" />
+        </div>
+        <div class="field">
+          <label for="sale-channel">Channel</label>
+          <select id="sale-channel">
+            <option value="whatsapp">WhatsApp</option>
+            <option value="walk-in">Walk-in</option>
+            <option value="delivery">Delivery</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sale-ref">Reference / Note</label>
+          <input id="sale-ref" type="text" placeholder="e.g. Ref #1042 or Customer name" />
+        </div>
+        <div class="field">
+          <button class="btn btn-success" id="sale-btn" style="padding:9px 18px">Record sale</button>
+        </div>
+      </div>
+      <p class="sale-msg" id="sale-msg"></p>
+    </div>
+
+    <!-- Product Inventory Table -->
+    <p class="section-title">Product Inventory</p>
+    <div class="table-wrap">
+      <div class="loader" id="products-loader"><div class="spinner"></div> Loading products...</div>
+      <table id="products-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Product</th>
+            <th>Karat</th>
+            <th>Weight</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Stock</th>
+            <th>Availability</th>
+            <th>Save</th>
+          </tr>
+        </thead>
+        <tbody id="products-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Sales History Table -->
+    <p class="section-title">Sales History</p>
+    <div class="table-wrap">
+      <div class="loader" id="sales-loader"><div class="spinner"></div> Loading sales...</div>
+      <div id="sales-empty" class="sales-empty" style="display:none">No sales recorded yet.</div>
+      <table id="sales-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>SKU</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Channel</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody id="sales-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let TOKEN = sessionStorage.getItem("gpd_token") || "";
+let storeData = null;
+
+function toast(msg, type = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast toast-" + type + " show";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 3400);
+}
+
+function fmt(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString("en-NG", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
+
+async function adminGet(path) {
+  const res = await fetch(path, { headers: { Authorization: "Bearer " + TOKEN } });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function adminPut(path, body) {
+  const res = await fetch(path, {
+    method: "PUT",
+    headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    throw new Error(d.error || "Update failed");
+  }
+  return res.json();
+}
+
+async function adminPost(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    throw new Error(d.error || "Request failed");
+  }
+  return res.json();
+}
+
+function badge(t, c) {
+  return `<span class="badge badge-${c}">${t}</span>`;
+}
+
+function renderStats(d) {
+  const act = d.products.filter(p => p.status === "active");
+  document.getElementById("stat-total").textContent = d.products.length;
+  document.getElementById("stat-instock").textContent = act.filter(p => p.stockQuantity > 0).length;
+  document.getElementById("stat-soldout").textContent = act.filter(p => p.stockQuantity === 0).length;
+  document.getElementById("stat-sales").textContent = (d.sales || []).length;
+}
+
+function renderSaleSkus(d) {
+  const sel = document.getElementById("sale-sku");
+  const prev = sel.value;
+  const activeItems = d.products.filter(p => p.status === "active");
+  if (!activeItems.length) {
+    sel.innerHTML = '<option value="">No active products available</option>';
+    return;
+  }
+  sel.innerHTML = activeItems.map(p =>
+    `<option value="${p.sku}" ${p.sku === prev ? "selected" : ""}>${p.name} - ${p.weightGrams}g (${p.sku}) [Stock: ${p.stockQuantity}]</option>`
+  ).join("");
+}
+
+function renderProducts(d) {
+  document.getElementById("products-loader").style.display = "none";
+  document.getElementById("products-table").style.display = "table";
+  const tbody = document.getElementById("products-tbody");
+
+  tbody.innerHTML = d.products.map(p => {
+    const avail = p.status === "active" && p.stockQuantity > 0;
+    return `<tr>
+      <td><img class="td-img" src="${p.image}" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22><rect width=%2244%22 height=%2244%22 fill=%22%23eee%22/></svg>'" /></td>
+      <td>
+        <div class="td-name">${p.name}</div>
+        <div class="td-sku">${p.sku} ${p.detail ? '&bull; ' + p.detail : ''}</div>
+      </td>
+      <td><strong>${p.karat}K</strong></td>
+      <td>${p.weightGrams}g</td>
+      <td style="text-transform:capitalize">${(p.category || '').replace(/-/g, ' ')}</td>
+      <td>
+        <select class="status-sel" data-sku="${p.sku}" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:.75rem;background:var(--paper)">
+          <option value="active" ${p.status === "active" ? "selected" : ""}>Active</option>
+          <option value="draft" ${p.status === "draft" ? "selected" : ""}>Draft</option>
+          <option value="archived" ${p.status === "archived" ? "selected" : ""}>Archived</option>
+        </select>
+      </td>
+      <td>
+        <div class="stock-cell">
+          <input class="stock-input" type="number" min="0" value="${p.stockQuantity}" data-sku="${p.sku}" />
+        </div>
+      </td>
+      <td>${avail ? badge("In stock", "green") : badge("Sold out", "red")}</td>
+      <td><button class="btn btn-outline btn-sm save-btn" data-sku="${p.sku}">Save</button></td>
+    </tr>`;
+  }).join("");
+
+  tbody.querySelectorAll(".save-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const sku = btn.dataset.sku;
+      const row = tbody.querySelector(`.stock-input[data-sku="${sku}"]`);
+      const statusSel = tbody.querySelector(`.status-sel[data-sku="${sku}"]`);
+      const stock = Number(row.value);
+      const product = storeData.products.find(p => p.sku === sku);
+      btn.textContent = "...";
+      btn.disabled = true;
+      try {
+        const res = await adminPut(`/api/admin/products/${encodeURIComponent(sku)}`, {
+          ...product,
+          stockQuantity: stock,
+          status: statusSel.value
+        });
+        const idx = storeData.products.findIndex(p => p.sku === sku);
+        storeData.products[idx] = res.product;
+        renderProducts(storeData);
+        renderStats(storeData);
+        renderSaleSkus(storeData);
+        toast(sku + " updated successfully", "ok");
+      } catch (e) {
+        toast(e.message, "err");
+      } finally {
+        btn.textContent = "Save";
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+function renderSales(d) {
+  document.getElementById("sales-loader").style.display = "none";
+  if (!d.sales || d.sales.length === 0) {
+    document.getElementById("sales-empty").style.display = "block";
+    document.getElementById("sales-table").style.display = "none";
+    return;
+  }
+  document.getElementById("sales-empty").style.display = "none";
+  document.getElementById("sales-table").style.display = "table";
+  const tbody = document.getElementById("sales-tbody");
+
+  tbody.innerHTML = d.sales.map(s => {
+    const pr = d.products.find(p => p.sku === s.sku);
+    const ch = s.channel === "whatsapp" ? badge("WhatsApp", "green") : badge(s.channel, "gold");
+    return `<tr>
+      <td>${fmt(s.createdAt)}</td>
+      <td><code style="font-size:.7rem;font-weight:700">${s.sku}</code></td>
+      <td>${pr ? pr.name : s.sku}</td>
+      <td><strong>${s.quantity}</strong></td>
+      <td>${ch}</td>
+      <td style="color:var(--muted)">${s.reference || s.notes || "-"}</td>
+    </tr>`;
+  }).join("");
+}
+
+// Upload & Image Handling
+const dropzone = document.getElementById("upload-dropzone");
+const fileInput = document.getElementById("prod-file");
+const previewCard = document.getElementById("upload-preview-card");
+const uploadThumb = document.getElementById("upload-thumb");
+const uploadFilename = document.getElementById("upload-filename");
+const uploadMeta = document.getElementById("upload-meta");
+const uploadStatus = document.getElementById("upload-status");
+const hiddenImageInput = document.getElementById("prod-image");
+const changeImgBtn = document.getElementById("change-img-btn");
+const toggleManual = document.getElementById("toggle-manual-image");
+const manualWrap = document.getElementById("manual-image-wrap");
+const manualInput = document.getElementById("prod-image-manual");
+
+dropzone.addEventListener("click", () => fileInput.click());
+changeImgBtn.addEventListener("click", () => fileInput.click());
+
+dropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropzone.classList.add("dragover");
+});
+
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("dragover");
+});
+
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener("change", (e) => {
+  if (e.target.files && e.target.files[0]) {
+    handleFile(e.target.files[0]);
+  }
+});
+
+async function handleFile(file) {
+  if (!file.type.startsWith("image/")) {
+    toast("Please choose an image file (PNG, JPG, WEBP)", "err");
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    toast("File exceeds 20MB limit", "err");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const dataBase64 = ev.target.result;
+    uploadThumb.src = dataBase64;
+    uploadFilename.textContent = file.name;
+    uploadMeta.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+    uploadStatus.textContent = "Uploading image...";
+    uploadStatus.style.color = "var(--gold)";
+    previewCard.style.display = "flex";
+    dropzone.style.display = "none";
+
+    try {
+      const res = await adminPost("/api/admin/upload", {
+        filename: file.name,
+        dataBase64: dataBase64
+      });
+      hiddenImageInput.value = res.path;
+      manualInput.value = res.path;
+      uploadStatus.textContent = `✓ Uploaded (${res.path})`;
+      uploadStatus.style.color = "var(--green)";
+      toast("Image uploaded!", "ok");
+    } catch (err) {
+      uploadStatus.textContent = `Upload failed: ${err.message}`;
+      uploadStatus.style.color = "var(--red)";
+      toast(err.message, "err");
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+toggleManual.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (manualWrap.style.display === "none") {
+    manualWrap.style.display = "block";
+    toggleManual.textContent = "Hide manual image input";
+  } else {
+    manualWrap.style.display = "none";
+    toggleManual.textContent = "Or enter image path / existing asset manually";
+  }
+});
+
+manualInput.addEventListener("input", () => {
+  const val = manualInput.value.trim();
+  hiddenImageInput.value = val;
+  if (val) {
+    uploadThumb.src = val;
+    uploadFilename.textContent = val;
+    uploadMeta.textContent = "Manual path";
+    uploadStatus.textContent = "Manual path set";
+    uploadStatus.style.color = "var(--teal)";
+    previewCard.style.display = "flex";
+    dropzone.style.display = "none";
+  }
+});
+
+// Auto-populate alt description if left blank
+document.getElementById("prod-name").addEventListener("input", autoAlt);
+document.getElementById("prod-karat").addEventListener("change", autoAlt);
+document.getElementById("prod-weight").addEventListener("input", autoAlt);
+function autoAlt() {
+  const altField = document.getElementById("prod-alt");
+  if (!altField.dataset.custom) {
+    const name = document.getElementById("prod-name").value.trim();
+    const karat = document.getElementById("prod-karat").value;
+    const weight = document.getElementById("prod-weight").value;
+    if (name || weight) {
+      altField.value = `${karat} Karat gold ${name || 'jewelry'}${weight ? '; scale reads ' + weight + ' grams' : ''}`;
+    }
+  }
+}
+document.getElementById("prod-alt").addEventListener("input", (e) => {
+  if (e.target.value.trim()) e.target.dataset.custom = "true";
+  else delete e.target.dataset.custom;
+});
+
+// Automatic SKU Generator
+const SKU_PREFIXES = {
+  "gold-bars": "GB",
+  "necklaces": "CH",
+  "chains": "CH",
+  "bracelets": "BR",
+  "pendants": "PN",
+  "earrings": "ER",
+  "rings": "RG",
+  "watches": "WT"
+};
+
+function autoGenerateSKU(force = false) {
+  const skuInput = document.getElementById("prod-sku");
+  if (!skuInput) return;
+  // If user entered custom SKU manually and force isn't set, keep it
+  if (!force && skuInput.dataset.manual === "true" && skuInput.value.trim()) return;
+
+  const category = document.getElementById("prod-category").value;
+  const prefix = SKU_PREFIXES[category] || "GP";
+
+  let maxNum = 0;
+  if (storeData && Array.isArray(storeData.products)) {
+    const rx = new RegExp(`^${prefix}[-_]?(\\d+)`, "i");
+    storeData.products.forEach(p => {
+      const m = String(p.sku || "").match(rx);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!isNaN(n) && n > maxNum) maxNum = n;
+      }
+    });
+  }
+  const nextNum = String(maxNum + 1).padStart(2, "0");
+  skuInput.value = `${prefix}-${nextNum}`;
+  delete skuInput.dataset.manual;
+}
+
+// Track manual edit vs auto
+document.getElementById("prod-sku").addEventListener("input", (e) => {
+  if (e.target.value.trim()) e.target.dataset.manual = "true";
+  else delete e.target.dataset.manual;
+});
+
+// Regenerate button click
+document.getElementById("btn-regen-sku").addEventListener("click", () => autoGenerateSKU(true));
+
+// Auto update SKU when category changes
+document.getElementById("prod-category").addEventListener("change", () => autoGenerateSKU(false));
+
+// Add Product Submit
+document.getElementById("add-product-btn").addEventListener("click", async () => {
+  const sku = document.getElementById("prod-sku").value.trim();
+  const name = document.getElementById("prod-name").value.trim();
+  const category = document.getElementById("prod-category").value;
+  const karat = Number(document.getElementById("prod-karat").value);
+  const weightGrams = Number(document.getElementById("prod-weight").value);
+  const stockQuantity = Number(document.getElementById("prod-stock").value);
+  const status = document.getElementById("prod-status").value;
+  const quoteState = document.getElementById("prod-quote").value;
+  const detail = document.getElementById("prod-detail").value.trim();
+  const image = document.getElementById("prod-image").value.trim();
+  const alt = document.getElementById("prod-alt").value.trim();
+
+  const msg = document.getElementById("add-msg");
+  const btn = document.getElementById("add-product-btn");
+
+  if (!sku || !name || isNaN(weightGrams) || weightGrams <= 0) {
+    msg.textContent = "Please fill in SKU, Name, and Weight in grams.";
+    msg.className = "add-msg err";
+    return;
+  }
+
+  if (!image) {
+    msg.textContent = "Please upload a product photo or select an image.";
+    msg.className = "add-msg err";
+    toast("Please upload a product image", "err");
+    return;
+  }
+
+  if (!alt) {
+    msg.textContent = "Please enter an image alt description.";
+    msg.className = "add-msg err";
+    return;
+  }
+
+  btn.textContent = "Adding product...";
+  btn.disabled = true;
+  msg.textContent = "";
+
+  try {
+    await adminPost("/api/admin/products", {
+      sku, name, category, karat, weightGrams, stockQuantity, status, quoteState, detail, image, alt
+    });
+
+    storeData = await adminGet("/api/admin/store");
+    renderStats(storeData);
+    renderSaleSkus(storeData);
+    renderProducts(storeData);
+
+    msg.textContent = `Product "${sku}" successfully added to inventory!`;
+    msg.className = "add-msg ok";
+    toast(`Product ${sku} added!`, "ok");
+
+    // Reset form
+    document.getElementById("add-product-form").reset();
+    hiddenImageInput.value = "";
+    manualInput.value = "";
+    previewCard.style.display = "none";
+    dropzone.style.display = "block";
+    manualWrap.style.display = "none";
+    delete document.getElementById("prod-alt").dataset.custom;
+    autoGenerateSKU(true);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = "add-msg err";
+    toast(e.message, "err");
+  } finally {
+    btn.textContent = "+ Add Product to Catalog";
+    btn.disabled = false;
+  }
+});
+
+// Login
+document.getElementById("login-btn").addEventListener("click", doLogin);
+document.getElementById("token-input").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+async function doLogin() {
+  const tok = document.getElementById("token-input").value.trim();
+  const err = document.getElementById("login-error");
+  const btn = document.getElementById("login-btn");
+  if (!tok) { err.textContent = "Enter the admin token."; return; }
+  btn.textContent = "Signing in...";
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/admin/store", { headers: { Authorization: "Bearer " + tok } });
+    if (!res.ok) throw new Error("bad token");
+    storeData = await res.json();
+    TOKEN = tok;
+    sessionStorage.setItem("gpd_token", tok);
+    err.textContent = "";
+    showApp();
+  } catch {
+    err.textContent = "Incorrect token. Try again.";
+  } finally {
+    btn.textContent = "Sign in";
+    btn.disabled = false;
+  }
+}
+
+// Logout
+document.getElementById("logout-btn").addEventListener("click", () => {
+  sessionStorage.removeItem("gpd_token");
+  TOKEN = "";
+  storeData = null;
+  document.getElementById("app").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("token-input").value = "";
+});
+
+// Record Sale
+document.getElementById("sale-btn").addEventListener("click", async () => {
+  const sku = document.getElementById("sale-sku").value;
+  const qty = Number(document.getElementById("sale-qty").value);
+  const channel = document.getElementById("sale-channel").value;
+  const ref = document.getElementById("sale-ref").value.trim();
+  const msg = document.getElementById("sale-msg");
+  const btn = document.getElementById("sale-btn");
+
+  if (!sku) {
+    msg.textContent = "Select a product.";
+    msg.className = "sale-msg err";
+    return;
+  }
+
+  btn.textContent = "Recording...";
+  btn.disabled = true;
+  try {
+    await adminPost("/api/admin/sales", { sku, quantity: qty, channel, reference: ref });
+    storeData = await adminGet("/api/admin/store");
+    renderProducts(storeData);
+    renderStats(storeData);
+    renderSales(storeData);
+    renderSaleSkus(storeData);
+    msg.textContent = `Sale recorded for ${sku} (qty: ${qty}).`;
+    msg.className = "sale-msg ok";
+    document.getElementById("sale-ref").value = "";
+    toast("Sale recorded", "ok");
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = "sale-msg err";
+    toast(e.message, "err");
+  } finally {
+    btn.textContent = "Record sale";
+    btn.disabled = false;
+  }
+});
+
+function showApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  renderStats(storeData);
+  renderSaleSkus(storeData);
+  renderProducts(storeData);
+  renderSales(storeData);
+  autoGenerateSKU(false);
+}
+
+// Init session
+(async () => {
+  if (TOKEN) {
+    try {
+      const res = await fetch("/api/admin/store", { headers: { Authorization: "Bearer " + TOKEN } });
+      if (res.ok) {
+        storeData = await res.json();
+        showApp();
+      } else {
+        sessionStorage.removeItem("gpd_token");
+        TOKEN = "";
+      }
+    } catch {
+      TOKEN = "";
+    }
+  }
+})();
+</script>
+</body>
+</html>

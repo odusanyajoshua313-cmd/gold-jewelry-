@@ -21,8 +21,15 @@ let currentPage = 0;
 const PAGE_SIZE = 4;
 let revealObserver;
 
+function filterMatch(product, filter) {
+  if (filter === "all") return true;
+  if (filter === "gold-bars") return product.category === "gold-bars" || product.category === "bars";
+  if (filter === "necklaces") return product.category === "necklaces" || product.category === "chains";
+  return product.category === filter;
+}
+
 function renderProducts() {
-  const visible = products.filter((product) => activeFilter === "all" || product.category === activeFilter);
+  const visible = products.filter((product) => filterMatch(product, activeFilter));
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   currentPage = Math.min(currentPage, pageCount - 1);
   const start = currentPage * PAGE_SIZE;
@@ -34,7 +41,7 @@ function renderProducts() {
     </article>`).join("");
   const carouselStatus = document.querySelector("#carousel-status");
   if (carouselStatus) {
-    const categoryName = activeFilter === "all" ? "pieces" : activeFilter;
+    const categoryName = activeFilter === "all" ? "pieces" : activeFilter.replace(/-/g, " ");
     carouselStatus.textContent = visible.length > 0
       ? `Showing ${start + 1}–${start + pageItems.length} of ${visible.length} ${categoryName}`
       : `No ${categoryName} found`;
@@ -49,16 +56,21 @@ function renderProducts() {
   const next = document.querySelector('[data-carousel-step="1"]');
   previous.disabled = currentPage === 0;
   next.disabled = currentPage >= pageCount - 1;
-  document.querySelector('[data-filter="all"] span').textContent = products.length;
-  document.querySelector('[data-filter="earrings"] span').textContent = products.filter((item) => item.category === "earrings").length;
-  document.querySelector('[data-filter="necklaces"] span').textContent = products.filter((item) => item.category === "necklaces").length;
-  document.querySelector('[data-filter="pendants"] span').textContent = products.filter((item) => item.category === "pendants").length;
+  const setFilterCount = (filter, fn) => {
+    const el = document.querySelector(`[data-filter="${filter}"] span`);
+    if (el) el.textContent = products.filter(fn).length;
+  };
+  setFilterCount("all", () => true);
+  setFilterCount("gold-bars", (item) => item.category === "gold-bars" || item.category === "bars");
+  setFilterCount("earrings", (item) => item.category === "earrings");
+  setFilterCount("necklaces", (item) => item.category === "necklaces" || item.category === "chains");
+  setFilterCount("pendants", (item) => item.category === "pendants");
   grid.querySelectorAll("[data-product]").forEach((button) => button.addEventListener("click", () => openInquiry(button.dataset.product)));
   observeRevealElements(grid);
 }
 
 document.querySelectorAll("[data-carousel-step]").forEach((button) => button.addEventListener("click", () => {
-  const visible = products.filter((product) => activeFilter === "all" || product.category === activeFilter);
+  const visible = products.filter((product) => filterMatch(product, activeFilter));
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   currentPage = Math.max(0, Math.min(pageCount - 1, currentPage + Number(button.dataset.carouselStep)));
   renderProducts();
