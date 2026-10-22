@@ -3,7 +3,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const root = __dirname;
-const dataPath = path.join(root, "data", "store.json");
+const dataPath = path.join(root, "store.json");
 const port = Number(process.env.PORT || 3000);
 const adminToken = process.env.ADMIN_TOKEN;
 let writeQueue = Promise.resolve();
