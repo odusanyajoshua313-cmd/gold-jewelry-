@@ -43,7 +43,7 @@ function renderProducts() {
   grid.innerHTML = pageItems.map((product, index) => `
     <article class="product-card" role="group" aria-roledescription="slide" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
       <div class="product-image"><img src="${product.image}" alt="${product.alt}" loading="lazy" decoding="async" /></div>
-      <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>Price: ask for today’s rate</strong><span>Stock: confirm availability</span></div><button class="product-ask" type="button" data-product="${product.id}">${whatsAppIcon}<span>Check price &amp; stock</span></button></div>
+      <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>${product.quoteState === "daily-rate" ? "Price: today’s rate" : "Price: request a quote"}</strong><span>${product.availability === "in-stock" ? "Stock: available" : "Stock: sold out"}</span></div><button class="product-ask" type="button" data-product="${product.id}" ${product.availability === "in-stock" ? "" : "disabled"}>${whatsAppIcon}<span>${product.availability === "in-stock" ? "Check price &amp; stock" : "Sold out"}</span></button></div>
     </article>`).join("");
   const carouselStatus = document.querySelector("#carousel-status");
   if (carouselStatus) {
