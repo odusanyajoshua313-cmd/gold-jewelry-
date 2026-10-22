@@ -278,7 +278,18 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   });
 });
 document.querySelector("#year").textContent = new Date().getFullYear();
-renderProducts();
+async function loadCatalog() {
+  try {
+    const response = await fetch("/api/catalog", { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Catalog unavailable");
+    const catalog = await response.json();
+    products = catalog.products.map((product) => ({ ...product, id: product.sku, weight: `${product.weightGrams} grams` }));
+    renderProducts();
+  } catch {
+    grid.innerHTML = '<p class="catalog-error" role="alert">The collection is temporarily unavailable. Please contact us on WhatsApp.</p>';
+  }
+}
+loadCatalog();
 observeRevealElements();
 window.addEventListener("scroll", updateScrollMotion, { passive: true });
 updateScrollMotion();
