@@ -1,8 +1,8 @@
 const products = [
-  { id: "ER-02", category: "earrings", name: "18 Karat Gold Hoop Earrings", karat: 18, detail: "Classic round hoop", weight: "2.5 grams", image: "assets/earrings-hoops-2-5g.jpeg", alt: "Pair of 18 Karat gold hoop earrings; scale reads 2.5 grams" },
-  { id: "ER-05", category: "earrings", name: "18 Karat Gold Textured Stud Earrings", karat: 18, detail: "Textured sphere", weight: "2.1 grams", image: "assets/earrings-stud-2-1g.jpeg", alt: "Pair of 18 Karat textured gold stud earrings; scale reads 2.1 grams" },
-  { id: "ER-08", category: "earrings", name: "18 Karat Sculptural Gold Earrings", karat: 18, detail: "Open sculptural form", weight: "1.5 grams", image: "assets/earrings-sculptural-1-5g.jpeg", alt: "18 Karat sculptural gold earring; scale reads 1.5 grams" },
-  { id: "ER-12", category: "earrings", name: "18 Karat Patterned Gold Hoop Earrings", karat: 18, detail: "Patterned round hoop", weight: "2.6 grams", image: "assets/earrings-pattern-hoops-2-6g.jpeg", alt: "Pair of 18 Karat patterned gold hoop earrings; scale reads 2.6 grams" },
+  { id: "ER-02", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Classic round hoop", weight: "2.5 grams", image: "assets/earrings-hoops-2-5g.jpeg", alt: "Pair of 18 Karat gold hoop earrings; scale reads 2.5 grams" },
+  { id: "ER-05", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Stud earring", weight: "2.1 grams", image: "assets/earrings-stud-2-1g.jpeg", alt: "Pair of 18 Karat gold stud earrings; scale reads 2.1 grams" },
+  { id: "ER-08", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Sculptural form", weight: "1.5 grams", image: "assets/earrings-sculptural-1-5g.jpeg", alt: "18 Karat sculptural gold earring; scale reads 1.5 grams" },
+  { id: "ER-12", category: "earrings", name: "18 Karat Gold Earring", karat: 18, detail: "Patterned round hoop", weight: "2.6 grams", image: "assets/earrings-pattern-hoops-2-6g.jpeg", alt: "Pair of 18 Karat patterned gold hoop earrings; scale reads 2.6 grams" },
   { id: "NK-01", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "23.1 grams", image: "assets/twist-necklace-23-1g.png", alt: "18 Karat twist gold necklace; scale reads 23.1 grams" },
   { id: "NK-02", category: "necklaces", name: "18 Karat Twist Gold Necklace", karat: 18, detail: "Twist design", weight: "22.9 grams", image: "assets/twist-necklace-22-9g.png", alt: "Separate 18 Karat twist gold necklace; scale reads 22.9 grams" },
   { id: "NK-FR-01", category: "necklaces", name: "18 Karat Franco Gold Necklace", karat: 18, detail: "Franco design · no pendant", weight: "2.3 grams", image: "assets/franco-necklace-2-3g.png", alt: "18 Karat Franco gold necklace without a pendant; scale reads 2.3 grams" },
@@ -33,7 +33,12 @@ function renderProducts() {
       <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>Price: ask for today’s rate</strong><span>Stock: confirm availability</span></div><button class="product-ask" type="button" data-product="${product.id}">${whatsAppIcon}<span>Check price &amp; stock</span></button></div>
     </article>`).join("");
   const carouselStatus = document.querySelector("#carousel-status");
-  if (carouselStatus) carouselStatus.textContent = `Showing ${start + 1}–${start + pageItems.length} of ${visible.length} pieces`;
+  if (carouselStatus) {
+    const categoryName = activeFilter === "all" ? "pieces" : activeFilter;
+    carouselStatus.textContent = visible.length > 0
+      ? `Showing ${start + 1}–${start + pageItems.length} of ${visible.length} ${categoryName}`
+      : `No ${categoryName} found`;
+  }
   const pages = document.querySelector("#carousel-pages");
   pages.innerHTML = Array.from({ length: pageCount }, (_, page) => `<button class="carousel-page${page === currentPage ? " is-active" : ""}" type="button" data-page="${page}" aria-label="Show collection page ${page + 1}" aria-current="${page === currentPage ? "page" : "false"}">${page + 1}</button>`).join("");
   pages.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => {
@@ -148,11 +153,30 @@ document.querySelector(".menu-toggle").addEventListener("click", (event) => {
   button.querySelector(".menu-label").textContent = isOpen ? "Menu" : "Close";
   nav.classList.toggle("is-open", !isOpen);
 });
-document.querySelectorAll("#site-nav a").forEach((link) => link.addEventListener("click", () => {
-  document.querySelector(".menu-toggle").setAttribute("aria-expanded", "false");
-  document.querySelector(".menu-toggle .menu-label").textContent = "Menu";
-  document.querySelector("#site-nav").classList.remove("is-open");
-}));
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    const targetId = link.getAttribute("href");
+    if (!targetId || targetId === "#") return;
+    const target = document.querySelector(targetId);
+    if (target) {
+      event.preventDefault();
+      const menuToggle = document.querySelector(".menu-toggle");
+      const siteNav = document.querySelector("#site-nav");
+      if (menuToggle && siteNav && siteNav.classList.contains("is-open")) {
+        menuToggle.setAttribute("aria-expanded", "false");
+        const menuLabel = menuToggle.querySelector(".menu-label");
+        if (menuLabel) menuLabel.textContent = "Menu";
+        siteNav.classList.remove("is-open");
+      }
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (history.pushState) {
+        history.pushState(null, null, targetId);
+      } else {
+        location.hash = targetId;
+      }
+    }
+  });
+});
 
 const navLinks = [...document.querySelectorAll("#site-nav a")];
 const navSections = navLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);

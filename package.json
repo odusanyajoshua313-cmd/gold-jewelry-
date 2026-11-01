@@ -1,0 +1,10 @@
+{
+  "name": "goldplugdami-site",
+  "version": "1.0.0",
+  "description": "Gold jewelry website for Goldplugdami",
+  "scripts": {
+    "dev": "node outputs/goldplugdami-site/preview-server.cjs",
+    "start": "node outputs/goldplugdami-site/preview-server.cjs"
+  },
+  "private": true
+}
