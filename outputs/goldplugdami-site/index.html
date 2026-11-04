@@ -42,8 +42,7 @@
         </div>
         <div class="hero-visual" data-reveal>
           <div class="hero-photo-frame"><img src="assets/franco-necklace-5g.png" alt="18 Karat Franco necklace shown on a scale" /></div>
-          <div class="hero-stamp"><span>MADE TO</span><strong>be kept</strong><span>GOLDPLUGDAMI · LAGOS</span></div>
-          <div class="hero-caption"><span>01 / OUR COLLECTION</span><span>Real pieces. Clear details.</span></div>
+          <div class="hero-caption"><span>OUR COLLECTION</span><span>Real pieces. Clear details.</span></div>
         </div>
       </section>
 
@@ -93,17 +92,45 @@
 
       <section id="why-us" class="trust-section section-wrap" aria-labelledby="why-us-title">
         <div class="trust-photo" data-reveal><img src="assets/earrings-pattern-hoops-2-6g.jpeg" alt="18 Karat gold hoop earrings with their weight shown on a scale" /><span class="photo-note">THE DETAILS MATTER</span></div>
-        <div class="trust-copy" data-reveal><p class="eyebrow">WHY CHOOSE US</p><h2 id="why-us-title">Know the details <em>of your gold.</em></h2><p>Review each piece’s full Karat and measured weight before asking us to confirm its daily calculated price and current availability.</p><div class="trust-list"><div><span>01</span><p><b>Full Karat details</b><br />18, 21, 22, and 24 Karat gold options.</p></div><div><span>02</span><p><b>Weight in grams</b><br />Each featured item is listed with its own weight.</p></div><div><span>03</span><p><b>Purchase receipt</b><br />The item’s hallmark number is recorded on the receipt.</p></div></div></div>
+        <div class="trust-copy" data-reveal><p class="eyebrow">WHY CHOOSE US</p><h2 id="why-us-title">Know the details <em>of your gold.</em></h2><p>Review each piece’s full Karat and measured weight before asking us to confirm its daily calculated price and current availability.</p><div class="trust-list"><div><span class="trust-bullet">✳</span><p><b>Full Karat details</b><br />18, 21, 22, and 24 Karat gold options.</p></div><div><span class="trust-bullet">✳</span><p><b>Weight in grams</b><br />Each featured item is listed with its own weight.</p></div><div><span class="trust-bullet">✳</span><p><b>Purchase receipt</b><br />The item’s hallmark number is recorded on the receipt.</p></div></div></div>
+      </section>
+
+      <section id="desire" class="desire-section section-wrap" aria-labelledby="desire-title" data-reveal>
+        <div class="desire-inner">
+          <p class="eyebrow" id="desire-title">THE STANDARD</p>
+          <blockquote class="desire-quote js-scrub-text">
+            <span>Every</span> <span>gram.</span> <span>Every</span> <span>Karat.</span> <span>Weighed</span> <span>honestly</span> <span>and</span> <span>priced</span> <span>by</span> <span>the</span> <span>day.</span>
+          </blockquote>
+          <p class="desire-sub">Transparent gold trading in Lagos — direct from scale to your hand.</p>
+        </div>
       </section>
 
       <section id="testimonials" class="testimonials-section section-wrap" aria-labelledby="testimonials-title">
-        <div class="section-heading" data-reveal>
+        <div class="section-heading testimonials-heading" data-reveal>
           <div><p class="eyebrow">CUSTOMER STORIES</p><h2 id="testimonials-title">Notes from <em>our customers.</em></h2></div>
+          <div class="carousel-controls" role="group" aria-label="Testimonial navigation">
+            <button class="carousel-arrow js-testimonial-prev" type="button" aria-label="Previous testimonial"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7"/></svg></button>
+            <div id="testimonial-dots" class="carousel-pages" role="group" aria-label="Testimonial slides"></div>
+            <button class="carousel-arrow js-testimonial-next" type="button" aria-label="Next testimonial"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button>
+          </div>
         </div>
-        <article class="testimonial-card" data-reveal aria-label="Customer feedback">
-          <p class="testimonial-card-label">A customer’s words</p>
-          <blockquote>“Thank you. So dainty.”</blockquote>
-        </article>
+        <div class="testimonials-carousel" data-reveal>
+          <article class="testimonial-card is-active" aria-label="Customer feedback 1 of 3">
+            <p class="testimonial-card-label">Verified customer · Lagos</p>
+            <blockquote>“Thank you. So dainty.”</blockquote>
+            <p class="testimonial-detail">18 Karat Gold Hoop Earrings</p>
+          </article>
+          <article class="testimonial-card" aria-label="Customer feedback 2 of 3">
+            <p class="testimonial-card-label">Verified customer · Abuja</p>
+            <blockquote>“The weight and hallmarking were exactly as agreed on the scale. Delivered safely to Abuja.”</blockquote>
+            <p class="testimonial-detail">18 Karat Franco Gold Necklace (5g)</p>
+          </article>
+          <article class="testimonial-card" aria-label="Customer feedback 3 of 3">
+            <p class="testimonial-card-label">Verified customer · Port Harcourt</p>
+            <blockquote>“Honest daily rate calculation without any hidden charges. Excellent customer service.”</blockquote>
+            <p class="testimonial-detail">18 Karat Twist Gold Necklace</p>
+          </article>
+        </div>
       </section>
 
       <section id="faq" class="faq-section" aria-labelledby="faq-title">
@@ -201,6 +228,8 @@
     </dialog>
     <div class="dialog-backdrop" hidden></div>
     <button class="floating-contact js-whatsapp" type="button" aria-label="Message Goldplugdami on WhatsApp"><span>Message us</span></button>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

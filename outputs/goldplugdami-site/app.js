@@ -222,3 +222,105 @@ if (finePointer && !reduceMotion) {
     }, { passive: true });
   });
 }
+
+// Testimonials Carousel
+const testimonialCards = [...document.querySelectorAll(".testimonials-carousel .testimonial-card")];
+let currentTestimonial = 0;
+const prevTestimonialBtn = document.querySelector(".js-testimonial-prev");
+const nextTestimonialBtn = document.querySelector(".js-testimonial-next");
+const testimonialDotsContainer = document.querySelector("#testimonial-dots");
+
+function showTestimonial(index) {
+  if (!testimonialCards.length) return;
+  currentTestimonial = (index + testimonialCards.length) % testimonialCards.length;
+  testimonialCards.forEach((card, i) => {
+    const isActive = i === currentTestimonial;
+    card.classList.toggle("is-active", isActive);
+    card.setAttribute("aria-hidden", String(!isActive));
+  });
+  if (testimonialDotsContainer) {
+    testimonialDotsContainer.querySelectorAll(".carousel-page").forEach((dot, i) => {
+      const isActive = i === currentTestimonial;
+      dot.classList.toggle("is-active", isActive);
+      dot.setAttribute("aria-current", isActive ? "page" : "false");
+    });
+  }
+}
+
+if (testimonialCards.length > 0) {
+  if (testimonialDotsContainer) {
+    testimonialDotsContainer.innerHTML = testimonialCards.map((_, i) =>
+      `<button class="carousel-page${i === 0 ? " is-active" : ""}" type="button" data-test-index="${i}" aria-label="Show testimonial ${i + 1}" aria-current="${i === 0 ? "page" : "false"}">${i + 1}</button>`
+    ).join("");
+    testimonialDotsContainer.querySelectorAll("[data-test-index]").forEach((btn) => {
+      btn.addEventListener("click", () => showTestimonial(Number(btn.dataset.testIndex)));
+    });
+  }
+  if (prevTestimonialBtn) {
+    prevTestimonialBtn.addEventListener("click", () => showTestimonial(currentTestimonial - 1));
+  }
+  if (nextTestimonialBtn) {
+    nextTestimonialBtn.addEventListener("click", () => showTestimonial(currentTestimonial + 1));
+  }
+}
+
+// GSAP ScrollTrigger Animations
+function initGSAPAnimations() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
+    document.querySelectorAll(".js-scrub-text span").forEach((span) => span.classList.add("is-active"));
+    return;
+  }
+
+  document.body.classList.add("has-gsap");
+  gsap.registerPlugin(ScrollTrigger);
+
+  // 1. Text Scrub Reveal for Desire Section
+  const scrubWords = document.querySelectorAll(".js-scrub-text span");
+  if (scrubWords.length) {
+    gsap.fromTo(
+      scrubWords,
+      { opacity: 0.15, y: 6 },
+      {
+        opacity: 1,
+        y: 0,
+        stagger: 0.1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: ".desire-section",
+          start: "top 75%",
+          end: "bottom 60%",
+          scrub: 0.8
+        }
+      }
+    );
+  }
+
+  // 2. Trust Photo subtle scale & parallax (Item 5)
+  const trustPhotoImg = document.querySelector("#why-us .trust-photo img");
+  if (trustPhotoImg) {
+    gsap.fromTo(
+      trustPhotoImg,
+      { scale: 0.94, opacity: 0.85 },
+      {
+        scale: 1.04,
+        opacity: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#why-us",
+          start: "top 80%",
+          end: "bottom 30%",
+          scrub: 1
+        }
+      }
+    );
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initGSAPAnimations);
+} else {
+  // Give external defer scripts a moment or initialize immediately
+  window.addEventListener("load", initGSAPAnimations);
+}
+

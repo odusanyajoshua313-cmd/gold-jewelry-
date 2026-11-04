@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = __dirname;
-const port = Number(process.env.PORT || 4173);
+const port = Number(process.env.PORT || 3000);
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -41,4 +41,6 @@ http.createServer((request, response) => {
       "X-Content-Type-Options": "nosniff"
     }).end(contents);
   });
-}).listen(port, "127.0.0.1");
+}).listen(port, "127.0.0.1", () => {
+  console.log(`GoldplugDami preview running at http://localhost:${port}`);
+});
