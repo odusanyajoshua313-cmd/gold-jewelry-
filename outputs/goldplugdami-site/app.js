@@ -1,15 +1,14 @@
 let products = [];
+let currentRates = { 18: 175000 };
+
+function formatNaira(amount) {
+  if (typeof amount !== "number" || isNaN(amount)) return "";
+  return "\u20A6" + Math.round(amount).toLocaleString("en-NG");
+}
 
 // Set this to the business WhatsApp number in international digits only, without + or spaces.
 const BUSINESS_WHATSAPP = "2349026859689";
-const newsletterForm = document.querySelector("#footer-newsletter-form");
-if (newsletterForm) {
-  newsletterForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const status = document.querySelector("#footer-newsletter-status");
-    if (status) status.textContent = "Email signup is not connected yet. Please check back soon.";
-  });
-}
+// Brevo form handling is managed directly via Brevo's main.js on #sib-form
 
 const whatsAppIcon = '<svg class="icon whatsapp-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.149-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.669-1.612-.916-2.207-.241-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.832 9.832 0 0 1-1.51-5.26c.002-5.45 4.437-9.884 9.888-9.884 2.635 0 5.1 1.026 6.96 2.888a9.825 9.825 0 0 1 2.885 6.994c-.002 5.45-4.437 9.884-9.89 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.158 11.892c0 2.096.547 4.142 1.588 5.946L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.49-8.413Z"/></svg>';
 
@@ -34,11 +33,26 @@ function renderProducts() {
   currentPage = Math.min(currentPage, pageCount - 1);
   const start = currentPage * PAGE_SIZE;
   const pageItems = visible.slice(start, start + PAGE_SIZE);
-  grid.innerHTML = pageItems.map((product, index) => `
-    <article class="product-card" role="button" tabindex="0" data-product="${product.id}" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
+  grid.innerHTML = pageItems.map((product, index) => {
+    const hasPrice = typeof product.calculatedPrice === "number" && product.calculatedPrice > 0;
+    const priceMarkup = hasPrice
+      ? `<div class="product-price-line"><strong class="product-price-amount">${formatNaira(product.calculatedPrice)}</strong></div>`
+      : `<strong>${product.quoteState === "daily-rate" ? "Price: today's rate" : "Price: request a quote"}</strong>`;
+
+    return `
+    <article class="product-card" data-product="${product.id}" aria-label="${product.name}, ${start + index + 1} of ${visible.length}" data-reveal style="--reveal-delay:${index * 70}ms">
       <div class="product-image"><img src="${product.image}" alt="${product.alt}" loading="lazy" decoding="async" /></div>
-      <div class="product-meta"><h3 class="product-title">${product.name}</h3><div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div><div class="product-price"><strong>${product.quoteState === "daily-rate" ? "Price: today’s rate" : "Price: request a quote"}</strong><span>${product.availability === "in-stock" ? "Stock: available" : "Stock: sold out"}</span></div><button class="product-ask" type="button" data-product="${product.id}" ${product.availability === "in-stock" ? "" : "disabled"}>${whatsAppIcon}<span>${product.availability === "in-stock" ? "Check price &amp; stock" : "Sold out"}</span></button></div>
-    </article>`).join("");
+      <div class="product-meta">
+        <h3 class="product-title">${product.name}</h3>
+        <div class="product-facts"><span>${product.detail}</span><span>${product.weight}</span></div>
+        <div class="product-price">
+          ${priceMarkup}
+          <span class="product-availability-tag ${product.availability === "in-stock" ? "is-instock" : "is-soldout"}">${product.availability === "in-stock" ? "Stock: available" : "Stock: sold out"}</span>
+        </div>
+        <button class="product-ask" type="button" data-product="${product.id}" ${product.availability === "in-stock" ? "" : "disabled"}>${whatsAppIcon}<span>${product.availability === "in-stock" ? "Check price &amp; stock" : "Sold out"}</span></button>
+      </div>
+    </article>`;
+  }).join("");
   const carouselStatus = document.querySelector("#carousel-status");
   if (carouselStatus) {
     const categoryName = activeFilter === "all" ? "pieces" : activeFilter.replace(/-/g, " ");
@@ -65,15 +79,6 @@ function renderProducts() {
   setFilterCount("earrings", (item) => item.category === "earrings");
   setFilterCount("necklaces", (item) => item.category === "necklaces" || item.category === "chains");
   setFilterCount("pendants", (item) => item.category === "pendants");
-  grid.querySelectorAll(".product-card").forEach((card) => {
-    card.addEventListener("click", () => openInquiry(card.dataset.product));
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openInquiry(card.dataset.product);
-      }
-    });
-  });
   grid.querySelectorAll(".product-ask").forEach((button) => {
     button.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -183,14 +188,15 @@ function updateScrollMotion() {
 function openInquiry(productId = "", intent = "general") {
   const product = products.find((item) => item.id === productId);
   const requests = {
-    general: "I’d like to ask about your gold jewelry and gold bars. Please share current rates, availability, and delivery options.",
-    rates: "Please share today’s selling rates per gram for 18 Karat, 21 Karat, 22 Karat, and 24 Karat gold.",
-    visit: "I’d like to arrange an in-person visit to your Lagos location. Please share the location details and a suitable time.",
+    general: "I'd like to ask about your gold jewelry and gold bars. Please share current rates, availability, and delivery options.",
+    rates: "Please share today's selling rates per gram for 18 Karat, 21 Karat, 22 Karat, and 24 Karat gold.",
+    visit: "I'd like to arrange an in-person visit to your Lagos location. Please share the location details and a suitable time.",
     trust: "I have a question about Karat, item weight, hallmark details, or the purchase receipt."
   };
   const imageUrl = product && product.image ? new URL(product.image, window.location.href).href : "";
+  const priceNote = product && product.calculatedPrice ? ` Today's calculated price is ${formatNaira(product.calculatedPrice)}.` : "";
   const text = product
-    ? `Hello Goldplugdami, I'm interested in the ${product.name} (${product.karat ? product.karat + " Karat, " : ""}${product.weight}, ${product.detail}). Please confirm today's calculated price, availability, and delivery options.\n\nProduct reference: ${product.id}${imageUrl ? `\nProduct photo: ${imageUrl}` : ""}`
+    ? `Hello Goldplugdami, I'm interested in the ${product.name} (${product.karat ? product.karat + " Karat, " : ""}${product.weight}, ${product.detail}).${priceNote} Please confirm availability and delivery options.\n\nProduct reference: ${product.id}${imageUrl ? `\nProduct photo: ${imageUrl}` : ""}`
     : `Hello Goldplugdami, ${requests[intent] || requests.general}`;
 
   // Product selected: go straight to WhatsApp, no modal
@@ -369,12 +375,42 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 document.querySelector("#year").textContent = new Date().getFullYear();
 async function loadCatalog() {
   try {
-    const response = await fetch("/api/catalog", { headers: { Accept: "application/json" } });
+    let response = await fetch("/api/products", { headers: { Accept: "application/json" } });
+    if (!response.ok) {
+      response = await fetch("/api/catalog", { headers: { Accept: "application/json" } });
+    }
     if (!response.ok) throw new Error("Catalog unavailable");
     const catalog = await response.json();
-    products = catalog.products.map((product) => ({ ...product, id: product.sku, weight: `${product.weightGrams} grams` }));
+    currentRates = catalog.rates || { 18: 175000 };
+    products = (catalog.products || []).map((product) => {
+      const weightGrams = Number(product.weightGrams ?? product.weight_grams ?? 0);
+      const karat = Number(product.karat ?? 18);
+      const rate = product.ratePerGram || product.rate_override || (currentRates && currentRates[karat]) || (karat === 18 ? 175000 : null);
+      const calculatedPrice = product.calculatedPrice ?? product.fixed_price ?? (rate && weightGrams ? Math.round(weightGrams * rate) : null);
+      const isAvailable = (product.availability === "in-stock" || product.status === "available") && (product.stockQuantity ?? product.stock_quantity ?? 1) > 0;
+
+      return {
+        ...product,
+        id: product.sku || product.id,
+        sku: product.sku,
+        name: product.name,
+        category: product.category,
+        karat: karat,
+        weightGrams: weightGrams,
+        weight: `${weightGrams} grams`,
+        detail: product.detail || product.description || "",
+        image: product.image || product.primary_image || (product.images && product.images[0]) || "",
+        alt: product.alt || `${product.name} - ${weightGrams}g`,
+        availability: isAvailable ? "in-stock" : "sold-out",
+        stockQuantity: product.stockQuantity ?? product.stock_quantity ?? 0,
+        quoteState: product.quoteState || product.quote_state || "daily-rate",
+        ratePerGram: rate,
+        calculatedPrice: calculatedPrice
+      };
+    });
     renderProducts();
-  } catch {
+  } catch (err) {
+    console.error("loadCatalog error:", err);
     grid.innerHTML = '<p class="catalog-error" role="alert">The collection is temporarily unavailable. Please contact us on WhatsApp.</p>';
   }
 }

@@ -5,18 +5,87 @@ const path = require("node:path");
 const root = __dirname;
 const dataPath = path.join(root, "store.json");
 const port = Number(process.env.PORT || 4173);
-const adminToken = process.env.ADMIN_TOKEN;
+const adminToken = process.env.ADMIN_TOKEN || "";
+const validAdminTokens = new Set([
+  process.env.ADMIN_TOKEN,
+  adminToken
+].filter(Boolean));
+const loginAttempts = new Map(); // ip -> { count, firstAttempt }
+
+function getClientIp(req) {
+  return req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress || "127.0.0.1";
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxAttempts = 5;
+  const record = loginAttempts.get(ip);
+  if (!record) return false;
+  if (now - record.firstAttempt > windowMs) {
+    loginAttempts.delete(ip);
+    return false;
+  }
+  return record.count >= maxAttempts;
+}
+
+function recordFailedAttempt(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const record = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
+  if (now - record.firstAttempt > windowMs) {
+    record.count = 1;
+    record.firstAttempt = now;
+  } else {
+    record.count += 1;
+  }
+  loginAttempts.set(ip, record);
+}
+
+function resetFailedAttempts(ip) {
+  loginAttempts.delete(ip);
+}
+
 let writeQueue = Promise.resolve();
 const contentTypes = { ".css": "text/css; charset=utf-8", ".html": "text/html; charset=utf-8", ".jpeg": "image/jpeg", ".jpg": "image/jpeg", ".js": "text/javascript; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".webp": "image/webp" };
 
 function json(response, status, body) {
-  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type"
+  });
   response.end(JSON.stringify(body));
 }
-function publicProduct(product) {
-  return { sku: product.sku, name: product.name, category: product.category, karat: product.karat, weightGrams: product.weightGrams, detail: product.detail, image: product.image, alt: product.alt, quoteState: product.quoteState, availability: product.status === "active" && product.stockQuantity > 0 ? "in-stock" : "sold-out" };
+function publicProduct(product, rates = {}) {
+  const rate = product.rateOverride || (rates && rates[product.karat]) || (product.karat === 18 ? 175000 : null);
+  const calculatedPrice = rate && product.weightGrams ? Math.round(product.weightGrams * rate) : null;
+  return {
+    sku: product.sku,
+    name: product.name,
+    category: product.category,
+    karat: product.karat,
+    weightGrams: product.weightGrams,
+    detail: product.detail,
+    image: product.image,
+    alt: product.alt,
+    quoteState: product.quoteState,
+    availability: product.status === "active" && product.stockQuantity > 0 ? "in-stock" : "sold-out",
+    ratePerGram: rate || null,
+    calculatedPrice: calculatedPrice
+  };
 }
-function authorised(request) { return Boolean(adminToken) && request.headers.authorization === `Bearer ${adminToken}`; }
+function authorised(request) {
+  const auth = request.headers.authorization;
+  if (!auth || !auth.startsWith("Bearer ")) return false;
+  const token = auth.slice(7).trim();
+  return validAdminTokens.has(token);
+}
 async function readBody(request, limit = 100000) {
   let body = "";
   for await (const chunk of request) { body += chunk; if (body.length > limit) throw new Error("Request body is too large"); }
@@ -35,7 +104,7 @@ function validateProduct(input, existing = {}) {
   if (!Number.isInteger(Number(product.stockQuantity)) || Number(product.stockQuantity) < 0) throw new Error("stockQuantity must be a whole number of zero or more");
   if (!["active", "draft", "archived"].includes(product.status)) throw new Error("status must be active, draft, or archived");
   if (!["daily-rate", "request-quote"].includes(product.quoteState)) throw new Error("quoteState must be daily-rate or request-quote");
-  return { ...product, sku: product.sku.trim(), name: product.name.trim(), karat: Number(product.karat), weightGrams: Number(product.weightGrams), stockQuantity: Number(product.stockQuantity), detail: String(product.detail || "").trim(), updatedAt: new Date().toISOString() };
+  return { ...product, sku: product.sku.trim(), name: product.name.trim(), karat: Number(product.karat), weightGrams: Number(product.weightGrams), stockQuantity: Number(product.stockQuantity), detail: String(product.detail || "").trim(), rateOverride: product.rateOverride ? Number(product.rateOverride) : null, updatedAt: new Date().toISOString() };
 }
 async function mutate(work) {
   const task = writeQueue.then(async () => {
@@ -52,14 +121,43 @@ async function serveStatic(pathname, response) {
   const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const filePath = path.resolve(root, relativePath);
   if (filePath !== root && !filePath.startsWith(root + path.sep)) return json(response, 403, { error: "Forbidden" });
-  try { const contents = await fs.readFile(filePath); response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream", "X-Content-Type-Options": "nosniff" }).end(contents); }
+  try {
+    const contents = await fs.readFile(filePath);
+    response.writeHead(200, {
+      "Cache-Control": "no-store",
+      "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://sibforms.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://sibforms.com; font-src 'self' https://fonts.gstatic.com https://assets.brevo.com; img-src 'self' data: https:; connect-src 'self' https://c6afc167.sibforms.com https://sibforms.com; frame-ancestors 'self'; form-action 'self' https://c6afc167.sibforms.com;"
+    }).end(contents);
+  }
   catch (error) { json(response, error.code === "ENOENT" ? 404 : 500, { error: "Not found" }); }
 }
 async function handler(request, response) {
+  if (request.method === "OPTIONS") {
+    response.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Max-Age": "86400"
+    });
+    return response.end();
+  }
   const url = new URL(request.url, "http://localhost");
-  if (request.method === "GET" && url.pathname === "/api/catalog") {
+  if (url.pathname === "/favicon.ico") {
+    response.writeHead(204, { "Cache-Control": "public, max-age=86400" });
+    return response.end();
+  }
+  if (request.method === "GET" && (url.pathname === "/api/catalog" || url.pathname === "/api/products")) {
     const store = JSON.parse(await fs.readFile(dataPath, "utf8"));
-    return json(response, 200, { updatedAt: store.updatedAt, products: store.products.filter((item) => item.status === "active").map(publicProduct) });
+    const rates = store.rates || { 18: 175000 };
+    return json(response, 200, {
+      updatedAt: store.updatedAt,
+      rates: rates,
+      products: store.products.filter((item) => item.status === "active").map((item) => publicProduct(item, rates))
+    });
   }
   if (!url.pathname.startsWith("/api/")) return serveStatic(url.pathname, response);
   if (!url.pathname.startsWith("/api/admin/")) return json(response, 404, { error: "Not found" });
@@ -87,6 +185,14 @@ async function handler(request, response) {
     return json(response, 201, { path: `assets/${fileName}`, filename: fileName });
   }
   if (request.method === "GET" && url.pathname === "/api/admin/store") return json(response, 200, JSON.parse(await fs.readFile(dataPath, "utf8")));
+  if (request.method === "PUT" && url.pathname === "/api/admin/rates") {
+    const input = await readBody(request);
+    const updatedRates = await mutate((store) => {
+      store.rates = { ...(store.rates || {}), ...input };
+      return store.rates;
+    });
+    return json(response, 200, { rates: updatedRates });
+  }
   if (request.method === "POST" && url.pathname === "/api/admin/products") {
     const input = await readBody(request);
     const product = await mutate((store) => {
@@ -133,4 +239,8 @@ async function handler(request, response) {
   }
   return json(response, 404, { error: "Not found" });
 }
-http.createServer((request, response) => handler(request, response).catch((error) => json(response, 400, { error: error.message || "Request failed" }))).listen(port, "127.0.0.1", () => console.log(`Goldplugdami inventory preview running at http://127.0.0.1:${port}`));
+http.createServer((request, response) => handler(request, response).catch((error) => json(response, 400, { error: error.message || "Request failed" }))).listen(port, "127.0.0.1", () => {
+  console.log(`Goldplugdami preview running at http://127.0.0.1:${port}`);
+  console.log(`Admin dashboard: http://127.0.0.1:${port}/admin.html`);
+});
+

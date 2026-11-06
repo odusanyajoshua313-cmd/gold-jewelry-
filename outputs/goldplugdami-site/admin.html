@@ -149,7 +149,7 @@
     }
     .topbar-logout:hover { border-color: #fff; color: #fff; }
     .page-wrap { max-width: 1160px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 60px; }
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 28px; }
     .stat-card { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
     .stat-label { font-size: .65rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
     .stat-value { font-size: 1.8rem; font-weight: 700; line-height: 1; color: var(--ink); }
@@ -204,6 +204,14 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.4fr auto; gap: 12px; align-items: end; }
     .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 10px; }
+
+        /* Login Tabs */
+    .login-tabs { display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+    .login-tab { flex: 1; padding: 8px 12px; font-size: .75rem; font-weight: 700; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; transition: all .15s ease; }
+    .login-tab.is-active { background: rgba(20, 82, 87, 0.08); color: var(--teal); border-color: rgba(20, 82, 87, 0.2); }
+    .field-checkbox { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .field-checkbox input { width: auto !important; margin: 0; cursor: pointer; }
+    .field-checkbox label { margin: 0 !important; text-transform: none !important; font-weight: 600 !important; cursor: pointer; }
 
     /* Upload Dropzone styling */
     .upload-dropzone {
@@ -364,6 +372,28 @@
     @media (max-width: 540px) {
       .grid-3, .grid-4, .grid-2, .form-row { grid-template-columns: 1fr; }
     }
+    .w-full { width: 100%; }
+    .topbar-store-link { color: #d5bb8a; font-size: .75rem; font-weight: 600; text-decoration: none; padding: 5px 12px; border: 1px solid rgba(213,187,138,0.35); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+    .sku-field-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .sku-label-nowrap { margin-bottom: 0; }
+    .sku-regen-btn { background: none; border: none; color: var(--teal); font-size: .68rem; font-weight: 700; cursor: pointer; text-decoration: underline; }
+    .sku-input-code { font-family: monospace; font-weight: 600; letter-spacing: 0.04em; }
+    .field-mb { margin-bottom: 14px; }
+    .file-input-hidden { display: none; }
+    .toggle-manual-wrap { margin-top: 8px; }
+    .toggle-manual-link { font-size: .72rem; color: var(--muted); text-decoration: underline; }
+    .manual-image-wrap { margin-top: 10px; }
+    .btn-sale { padding: 9px 18px; }
+    .is-hidden { display: none; }
+    .td-cat { text-transform: capitalize; }
+    .status-sel { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: .75rem; background: var(--paper); }
+    .td-nowrap { white-space: nowrap; }
+    .td-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-del { background: var(--red-light); color: var(--red); border: 1px solid #f5c2c7; padding: 6px 10px; }
+    .code-sku { font-size: .7rem; font-weight: 700; }
+    .text-muted { color: var(--muted); }
+    .stat-rates { font-size: 1rem; line-height: 1.6; }
+    .field-hint { font-size: .65rem; color: var(--muted); margin-top: 3px; }
   </style>
 </head>
 <body>
@@ -372,10 +402,26 @@
   <div class="login-box">
     <div class="login-wordmark">goldplug<span>dami</span></div>
     <p>Admin &amp; Inventory Dashboard</p>
-    <label for="token-input">Admin Token</label>
-    <input id="token-input" type="password" placeholder="Enter your admin token" autocomplete="current-password" />
+
+    <div class="login-tabs">
+      <button type="button" class="login-tab is-active" id="tab-token-btn">Admin Token</button>
+      <button type="button" class="login-tab" id="tab-auth-btn">Supabase Auth</button>
+    </div>
+
+    <div id="wrap-token">
+      <label for="token-input">Admin Token / Secret</label>
+      <input id="token-input" type="password" placeholder="Enter your admin token" autocomplete="current-password" />
+    </div>
+
+    <div id="wrap-auth" style="display: none;">
+      <label for="email-input">Admin Email</label>
+      <input id="email-input" type="email" placeholder="admin@goldplugdami.com" autocomplete="email" />
+      <label for="password-input" style="margin-top: 10px;">Password</label>
+      <input id="password-input" type="password" placeholder="Enter password" autocomplete="current-password" />
+    </div>
+
     <div class="login-error" id="login-error"></div>
-    <button class="btn btn-primary" id="login-btn" style="width:100%">Sign in</button>
+    <button type="button" class="btn btn-primary w-full" id="login-btn">Sign in</button>
   </div>
 </div>
 
@@ -383,9 +429,9 @@
   <header class="topbar">
     <div class="topbar-brand">goldplug<span>dami</span></div>
     <div class="topbar-right">
-      <a href="/" target="_blank" style="color:#d5bb8a; font-size:.75rem; font-weight:600; text-decoration:none; padding:5px 12px; border:1px solid rgba(213,187,138,0.35); border-radius:6px; display:inline-flex; align-items:center; gap:6px;">🌐 View Live Store</a>
+      <a href="/" target="_blank" class="topbar-store-link">🌐 View Live Store</a>
       <span class="topbar-tag">Admin Portal</span>
-      <button class="topbar-logout" id="logout-btn">Sign out</button>
+      <button type="button" class="topbar-logout" id="logout-btn">Sign out</button>
     </div>
   </header>
 
@@ -408,6 +454,37 @@
         <div class="stat-label">Sales Recorded</div>
         <div class="stat-value gold" id="stat-sales">-</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">Daily Gold Rates</div>
+        <div class="stat-value gold stat-rates" id="stat-rates">₦175,000/g</div>
+      </div>
+    </div>
+
+    <!-- Daily Gold Rates Panel -->
+    <p class="section-title">Daily Gold Rates (₦ per gram)</p>
+    <div class="panel">
+      <div class="grid-4">
+        <div class="field">
+          <label for="rate-18">18 Karat (₦/g)*</label>
+          <input id="rate-18" type="number" min="0" step="100" placeholder="e.g. 175000" />
+        </div>
+        <div class="field">
+          <label for="rate-21">21 Karat (₦/g)</label>
+          <input id="rate-21" type="number" min="0" step="100" placeholder="e.g. 210000" />
+        </div>
+        <div class="field">
+          <label for="rate-22">22 Karat (₦/g)</label>
+          <input id="rate-22" type="number" min="0" step="100" placeholder="e.g. 225000" />
+        </div>
+        <div class="field">
+          <label for="rate-24">24 Karat (₦/g)</label>
+          <input id="rate-24" type="number" min="0" step="100" placeholder="e.g. 260000" />
+        </div>
+      </div>
+      <div class="form-footer">
+        <p class="sale-msg" id="rate-msg"></p>
+        <button type="button" class="btn btn-primary" id="save-rates-btn">💰 Update Daily Rates</button>
+      </div>
     </div>
 
     <!-- Add New Product Panel -->
@@ -416,11 +493,11 @@
       <form id="add-product-form" onsubmit="return false;">
         <div class="grid-3">
           <div class="field">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <label for="prod-sku" style="margin-bottom:0">SKU (Auto-Generated)*</label>
-              <button type="button" id="btn-regen-sku" title="Generate next unique SKU" style="background:none; border:none; color:var(--teal); font-size:.68rem; font-weight:700; cursor:pointer; text-decoration:underline;">↺ New SKU</button>
+            <div class="sku-field-header">
+              <label for="prod-sku" class="sku-label-nowrap">SKU (Auto-Generated)*</label>
+              <button type="button" id="btn-regen-sku" title="Generate next unique SKU" class="sku-regen-btn">↺ New SKU</button>
             </div>
-            <input id="prod-sku" type="text" placeholder="Auto-generated" required style="font-family:monospace; font-weight:600; letter-spacing:0.04em;" />
+            <input id="prod-sku" type="text" placeholder="Auto-generated" required class="sku-input-code" />
           </div>
           <div class="field">
             <label for="prod-name">Product Name*</label>
@@ -469,12 +546,15 @@
         </div>
 
         <div class="grid-2">
-          <div class="field">
-            <label for="prod-quote">Quote State*</label>
-            <select id="prod-quote" required>
-              <option value="daily-rate">Daily Gold Rate</option>
-              <option value="request-quote">Request Custom Quote</option>
-            </select>
+                  <div class="field-checkbox">
+          <input type="checkbox" id="prod-featured" />
+          <label for="prod-featured">Feature on storefront homepage</label>
+        </div>
+
+        <div class="field" id="prod-rate-field">
+            <label for="prod-rate">Rate ₦/gram (override)</label>
+            <input id="prod-rate" type="number" min="0" step="100" placeholder="Leave blank to use daily rate" />
+            <div class="field-hint">Optional — overrides the daily karat rate for this product</div>
           </div>
           <div class="field">
             <label for="prod-detail">Detail / Description</label>
@@ -483,9 +563,9 @@
         </div>
 
         <!-- Image Upload Section -->
-        <div class="field" style="margin-bottom: 14px;">
+        <div class="field field-mb">
           <label>Product Image (Upload Photo)*</label>
-          <input type="file" id="prod-file" accept="image/png, image/jpeg, image/webp" style="display: none;" />
+          <input type="file" id="prod-file" accept="image/png, image/jpeg, image/webp" class="file-input-hidden" />
           <input type="hidden" id="prod-image" required />
 
           <!-- Interactive Upload Dropzone -->
@@ -507,21 +587,21 @@
           </div>
 
           <!-- Manual URL / Asset fallback -->
-          <div style="margin-top: 8px;">
-            <a href="#" id="toggle-manual-image" style="font-size: .72rem; color: var(--muted); text-decoration: underline;">Or enter image path / existing asset manually</a>
+          <div class="toggle-manual-wrap">
+            <a href="#" id="toggle-manual-image" class="toggle-manual-link">Or enter image path / existing asset manually</a>
           </div>
 
-          <div id="manual-image-wrap" style="display: none; margin-top: 10px;">
+          <div id="manual-image-wrap" class="manual-image-wrap is-hidden">
             <input id="prod-image-manual" type="text" list="image-suggestions" placeholder="assets/... or https://..." />
             <datalist id="image-suggestions">
-              <option value="assets/franco-necklace-2-3g.png">
-              <option value="assets/franco-necklace-5g.png">
-              <option value="assets/twist-necklace-22-9g.png">
-              <option value="assets/twist-necklace-23-1g.png">
-              <option value="assets/pendant-jesus-piece-2-1g.png">
-              <option value="assets/pendant-anchor-8-5g.png">
-              <option value="assets/pendant-bitcoin-7-2g.png">
-              <option value="assets/pendant-pharaoh-9-3g.png">
+              <option value="assets/franco-necklace-2-3g.jpg">
+              <option value="assets/franco-necklace-5g.jpg">
+              <option value="assets/twist-necklace-22-9g.jpg">
+              <option value="assets/twist-necklace-23-1g.jpg">
+              <option value="assets/pendant-jesus-piece-2-1g.jpg">
+              <option value="assets/pendant-anchor-8-5g.jpg">
+              <option value="assets/pendant-bitcoin-7-2g.jpg">
+              <option value="assets/pendant-pharaoh-9-3g.jpg">
               <option value="assets/earrings-hoops-2-5g.jpeg">
               <option value="assets/earrings-pattern-hoops-2-6g.jpeg">
               <option value="assets/earrings-sculptural-1-5g.jpeg">
@@ -530,14 +610,14 @@
           </div>
         </div>
 
-        <div class="field" style="margin-bottom: 14px;">
+        <div class="field field-mb">
           <label for="prod-alt">Image Alt Description*</label>
           <input id="prod-alt" type="text" placeholder="e.g. 18 Karat gold chain on scale weighing 8.5 grams" required />
         </div>
 
         <div class="form-footer">
           <div class="add-msg" id="add-msg"></div>
-          <button class="btn btn-primary" id="add-product-btn">
+          <button type="button" class="btn btn-primary" id="add-product-btn">
             + Add Product to Catalog
           </button>
         </div>
@@ -569,7 +649,7 @@
           <input id="sale-ref" type="text" placeholder="e.g. Ref #1042 or Customer name" />
         </div>
         <div class="field">
-          <button class="btn btn-success" id="sale-btn" style="padding:9px 18px">Record sale</button>
+          <button type="button" class="btn btn-success btn-sale" id="sale-btn">Record sale</button>
         </div>
       </div>
       <p class="sale-msg" id="sale-msg"></p>
@@ -579,13 +659,14 @@
     <p class="section-title">Product Inventory</p>
     <div class="table-wrap">
       <div class="loader" id="products-loader"><div class="spinner"></div> Loading products...</div>
-      <table id="products-table" style="display:none">
+      <table id="products-table" class="is-hidden">
         <thead>
           <tr>
             <th>Photo</th>
             <th>Product</th>
             <th>Karat</th>
             <th>Weight</th>
+            <th>Est. Price</th>
             <th>Category</th>
             <th>Status</th>
             <th>Stock</th>
@@ -601,8 +682,8 @@
     <p class="section-title">Sales History</p>
     <div class="table-wrap">
       <div class="loader" id="sales-loader"><div class="spinner"></div> Loading sales...</div>
-      <div id="sales-empty" class="sales-empty" style="display:none">No sales recorded yet.</div>
-      <table id="sales-table" style="display:none">
+      <div id="sales-empty" class="sales-empty is-hidden">No sales recorded yet.</div>
+      <table id="sales-table" class="is-hidden">
         <thead>
           <tr>
             <th>Date</th>
@@ -695,6 +776,14 @@ function renderStats(d) {
   document.getElementById("stat-instock").textContent = act.filter(p => p.stockQuantity > 0).length;
   document.getElementById("stat-soldout").textContent = act.filter(p => p.stockQuantity === 0).length;
   document.getElementById("stat-sales").textContent = (d.sales || []).length;
+  const rates = d.rates || {};
+  const ratesEl = document.getElementById("stat-rates");
+  if (ratesEl) {
+    const lines = [18, 21, 22, 24]
+      .filter(k => rates[k])
+      .map(k => `${k}K: ₦${Number(rates[k]).toLocaleString("en-NG")}/g`);
+    ratesEl.textContent = lines.length ? lines.join("  •  ") : "Not set";
+  }
 }
 
 function renderSaleSkus(d) {
@@ -725,9 +814,13 @@ function renderProducts(d) {
       </td>
       <td><strong>${p.karat}K</strong></td>
       <td>${p.weightGrams}g</td>
-      <td style="text-transform:capitalize">${(p.category || '').replace(/-/g, ' ')}</td>
+      <td><strong>${(function() {
+        const rate = p.rateOverride || (d.rates && d.rates[p.karat]) || (p.karat === 18 ? 175000 : null);
+        return rate && p.weightGrams ? ('₦' + Math.round(p.weightGrams * rate).toLocaleString('en-NG')) : (p.quoteState === 'daily-rate' ? 'Daily rate' : 'Quote');
+      })()}</strong></td>
+      <td class="td-cat">${(p.category || '').replace(/-/g, ' ')}</td>
       <td>
-        <select class="status-sel" data-sku="${p.sku}" style="padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:.75rem;background:var(--paper)">
+        <select class="status-sel" data-sku="${p.sku}">
           <option value="active" ${p.status === "active" ? "selected" : ""}>Active</option>
           <option value="draft" ${p.status === "draft" ? "selected" : ""}>Draft</option>
           <option value="archived" ${p.status === "archived" ? "selected" : ""}>Archived</option>
@@ -739,10 +832,10 @@ function renderProducts(d) {
         </div>
       </td>
       <td>${avail ? badge("In stock", "green") : badge("Sold out", "red")}</td>
-      <td style="white-space:nowrap">
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-outline btn-sm save-btn" data-sku="${p.sku}">Save</button>
-          <button class="btn btn-sm del-btn" data-sku="${p.sku}" style="background:var(--red-light);color:var(--red);border:1px solid #f5c2c7;padding:6px 10px;" title="Delete product">Delete</button>
+      <td class="td-nowrap">
+        <div class="td-actions">
+          <button type="button" class="btn btn-outline btn-sm save-btn" data-sku="${p.sku}">Save</button>
+          <button type="button" class="btn btn-sm del-btn btn-del" data-sku="${p.sku}" title="Delete product">Delete</button>
         </div>
       </td>
     </tr>`;
@@ -821,11 +914,11 @@ function renderSales(d) {
     const ch = s.channel === "whatsapp" ? badge("WhatsApp", "green") : badge(s.channel, "gold");
     return `<tr>
       <td>${fmt(s.createdAt)}</td>
-      <td><code style="font-size:.7rem;font-weight:700">${s.sku}</code></td>
+      <td><code class="code-sku">${s.sku}</code></td>
       <td>${pr ? pr.name : s.sku}</td>
       <td><strong>${s.quantity}</strong></td>
       <td>${ch}</td>
-      <td style="color:var(--muted)">${s.reference || s.notes || "-"}</td>
+      <td class="text-muted">${s.reference || s.notes || "-"}</td>
     </tr>`;
   }).join("");
 }
@@ -1013,7 +1106,8 @@ document.getElementById("add-product-btn").addEventListener("click", async () =>
   const weightGrams = Number(document.getElementById("prod-weight").value);
   const stockQuantity = Number(document.getElementById("prod-stock").value);
   const status = document.getElementById("prod-status").value;
-  const quoteState = document.getElementById("prod-quote").value;
+  const quoteState = "daily-rate";
+  const rateOverride = document.getElementById("prod-rate").value.trim();
   const detail = document.getElementById("prod-detail").value.trim();
   const image = document.getElementById("prod-image").value.trim();
   const alt = document.getElementById("prod-alt").value.trim();
@@ -1046,7 +1140,8 @@ document.getElementById("add-product-btn").addEventListener("click", async () =>
 
   try {
     await adminPost("/api/admin/products", {
-      sku, name, category, karat, weightGrams, stockQuantity, status, quoteState, detail, image, alt
+      sku, name, category, karat, weightGrams, stockQuantity, status, quoteState, detail, image, alt,
+      rateOverride: rateOverride ? Number(rateOverride) : null
     });
 
     storeData = await adminGet("/api/admin/store");
@@ -1077,30 +1172,98 @@ document.getElementById("add-product-btn").addEventListener("click", async () =>
   }
 });
 
-// Login
+// Dual-mode Login (Admin Token or Supabase Auth)
+let activeLoginMode = "token"; // "token" | "auth"
+
+const tabTokenBtn = document.getElementById("tab-token-btn");
+const tabAuthBtn = document.getElementById("tab-auth-btn");
+const wrapToken = document.getElementById("wrap-token");
+const wrapAuth = document.getElementById("wrap-auth");
+
+if (tabTokenBtn && tabAuthBtn) {
+  tabTokenBtn.addEventListener("click", () => {
+    activeLoginMode = "token";
+    tabTokenBtn.classList.add("is-active");
+    tabAuthBtn.classList.remove("is-active");
+    wrapToken.style.display = "block";
+    wrapAuth.style.display = "none";
+    document.getElementById("login-error").textContent = "";
+    document.getElementById("token-input").focus();
+  });
+
+  tabAuthBtn.addEventListener("click", () => {
+    activeLoginMode = "auth";
+    tabAuthBtn.classList.add("is-active");
+    tabTokenBtn.classList.remove("is-active");
+    wrapAuth.style.display = "block";
+    wrapToken.style.display = "none";
+    document.getElementById("login-error").textContent = "";
+    document.getElementById("email-input").focus();
+  });
+}
+
 document.getElementById("login-btn").addEventListener("click", doLogin);
 document.getElementById("token-input").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("password-input")?.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
 
 async function doLogin() {
-  const tok = document.getElementById("token-input").value.trim();
   const err = document.getElementById("login-error");
   const btn = document.getElementById("login-btn");
-  if (!tok) { err.textContent = "Enter the admin token."; return; }
-  btn.textContent = "Signing in...";
-  btn.disabled = true;
-  try {
-    const res = await fetch("/api/admin/store", { headers: { Authorization: "Bearer " + tok } });
-    if (!res.ok) throw new Error("bad token");
-    storeData = await res.json();
-    TOKEN = tok;
-    sessionStorage.setItem("gpd_token", tok);
-    err.textContent = "";
-    showApp();
-  } catch {
-    err.textContent = "Incorrect token. Try again.";
-  } finally {
-    btn.textContent = "Sign in";
-    btn.disabled = false;
+  err.textContent = "";
+
+  if (activeLoginMode === "token") {
+    const tok = document.getElementById("token-input").value.trim();
+    if (!tok) { err.textContent = "Enter your admin token."; return; }
+    btn.textContent = "Signing in...";
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/admin/store", { headers: { Authorization: "Bearer " + tok } });
+      if (res.status === 401) { err.textContent = "Incorrect token. Try again."; return; }
+      if (!res.ok) { err.textContent = "Server returned error " + res.status; return; }
+      storeData = await res.json();
+      TOKEN = tok;
+      sessionStorage.setItem("gpd_token", tok);
+      showApp();
+    } catch (networkErr) {
+      if (window.location.protocol === "file:") {
+        err.textContent = "Opened as file://. Please open via http://127.0.0.1:4173/admin.html";
+      } else {
+        err.textContent = "Cannot connect to server. Ensure preview-server is running.";
+      }
+    } finally {
+      btn.textContent = "Sign in";
+      btn.disabled = false;
+    }
+  } else {
+    // Supabase Auth mode
+    const email = document.getElementById("email-input").value.trim();
+    const password = document.getElementById("password-input").value;
+    if (!email || !password) { err.textContent = "Enter both email and password."; return; }
+    btn.textContent = "Authenticating...";
+    btn.disabled = true;
+    try {
+      const authRes = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const authData = await authRes.json();
+      if (!authRes.ok) throw new Error(authData.error || "Authentication failed");
+
+      TOKEN = authData.token;
+      sessionStorage.setItem("gpd_token", TOKEN);
+
+      // Load store data with authenticated JWT
+      const storeRes = await fetch("/api/admin/store", { headers: { Authorization: "Bearer " + TOKEN } });
+      if (!storeRes.ok) throw new Error("Could not load inventory");
+      storeData = await storeRes.json();
+      showApp();
+    } catch (authErr) {
+      err.textContent = authErr.message;
+    } finally {
+      btn.textContent = "Sign in";
+      btn.disabled = false;
+    }
   }
 }
 
@@ -1152,9 +1315,61 @@ document.getElementById("sale-btn").addEventListener("click", async () => {
   }
 });
 
+// Populate rate inputs from store data
+function loadRateInputs(d) {
+  const rates = d.rates || {};
+  [18, 21, 22, 24].forEach(k => {
+    const el = document.getElementById("rate-" + k);
+    if (el && rates[k]) el.value = rates[k];
+    else if (el) el.value = "";
+  });
+}
+
+// Save rates
+document.getElementById("save-rates-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("save-rates-btn");
+  const msg = document.getElementById("rate-msg");
+  const rates = {};
+  let hasRate = false;
+  [18, 21, 22, 24].forEach(k => {
+    const val = document.getElementById("rate-" + k).value.trim();
+    if (val && Number(val) > 0) {
+      rates[k] = Number(val);
+      hasRate = true;
+    }
+  });
+
+  if (!hasRate) {
+    msg.textContent = "Enter at least one karat rate.";
+    msg.className = "sale-msg err";
+    return;
+  }
+
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+  msg.textContent = "";
+  try {
+    await adminPut("/api/admin/rates", rates);
+    storeData.rates = { ...(storeData.rates || {}), ...rates };
+    renderStats(storeData);
+    renderProducts(storeData);
+    msg.textContent = "Daily rates updated successfully!";
+    msg.className = "sale-msg ok";
+    toast("Daily gold rates updated!", "ok");
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = "sale-msg err";
+    toast(e.message, "err");
+  } finally {
+    btn.textContent = "💰 Update Daily Rates";
+    btn.disabled = false;
+  }
+});
+
 function showApp() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("app").style.display = "block";
+  loadRateInputs(storeData);
   renderStats(storeData);
   renderSaleSkus(storeData);
   renderProducts(storeData);
